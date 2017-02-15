@@ -1,0 +1,126 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use utf8;
+
+use feature 'say';
+
+use Mojo::UserAgent;
+use Getopt::Long qw/GetOptions/;
+use Data::Dumper qw/Dumper/;
+
+binmode(STDOUT, ":utf8"); # it's 2017, right?
+
+my $webhook_url;
+my $directory = "./";
+my $username;
+my $watch = 10;
+my $help;
+my $debug;
+my $now         = time();
+my $error_count = 0;
+my $error_max   = 10;
+
+GetOptions(
+  "webhook=s"   => \$webhook_url,
+  "directory=s" => \$directory,
+  "username=s"  => \$username,
+  "watch=i"     => \$watch,
+  "help"        => \$help,
+  "debug"       => \$debug,
+) || die usage();
+
+usage() if $help;
+
+if (! $webhook_url) {
+  usage("--webhook must be supplied");
+}
+
+sub usage {
+  my $error = shift || "";
+  say "$0 --webhook url [--directory /some/path] [--username \"name to post as\"] [--watch n]";
+  say "error: $error" if $error;
+  exit defined $error ? 1 : 0;
+}
+
+chdir $directory || die "cannot chdir to $directory: $!\n";
+
+watch_dir();
+
+sub watch_dir {
+  while (1) {
+    my @files = glob("*");
+    @files = grep { qualifies($_) } @files;
+    foreach my $file (sort { mtime($a) <=> mtime($b) } @files) {
+      debug("examining $file");
+      if (mtime($file) > $now) {
+        $now = mtime($file);
+        upload($file);
+      }
+    }
+    sleep $watch;
+  }
+}
+
+sub mtime {
+  my $f = shift;
+  return (stat($f))[9];
+}
+
+sub qualifies {
+  my $filename = shift;
+  return 1 if ($filename =~ /\.jpg$|\.gif$|\.png$/i);
+  return;
+}
+
+sub info {
+  say "➔ " . shift;
+}
+
+sub debug {
+  return unless $debug;
+  say "! " . shift;
+}
+
+sub error {
+  say "⚠ " . shift;
+}
+
+sub upload {
+  my $file = shift;
+  info("uploading $file");
+
+  my $ua = Mojo::UserAgent->new;
+  my $data = {
+      upload => { file => $file },
+      $username ? ( username => $username ) : ()
+  };
+
+  my $tx = $ua->post($webhook_url, form => $data);
+
+  if (my $res = $tx->success) {
+    debug(Dumper($res->json));
+    my $url    = $res->json->{attachments}->[0]->{url};
+    my $size   = $res->json->{attachments}->[0]->{size};
+    my $width  = $res->json->{attachments}->[0]->{width};
+    my $height = $res->json->{attachments}->[0]->{height};
+    info("uploaded ${width}x${height} $size bytes images to $url, submitted to webhook successfully");
+  }
+  else {
+    debug(Dumper($tx));
+
+    my $err = $tx->error;
+    if ($err->{code}) {
+      error("$err->{code} response: $err->{message}");
+    }
+    else {
+      error("Connection error: $err->{message}");
+    }
+    $error_count++;
+    if ($error_count >= $error_max) {
+      error("Sorry - too many errors - quitting");
+    }
+  }
+
+}
