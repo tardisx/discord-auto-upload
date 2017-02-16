@@ -2,15 +2,12 @@
 
 use strict;
 use warnings;
-use utf8;
 
 use feature 'say';
 
 use Mojo::UserAgent;
 use Getopt::Long qw/GetOptions/;
 use Data::Dumper qw/Dumper/;
-
-binmode(STDOUT, ":utf8"); # it's 2017, right?
 
 my $webhook_url;
 my $directory = "./";
@@ -75,7 +72,7 @@ sub qualifies {
 }
 
 sub info {
-  say "➔ " . shift;
+  say "- " . shift;
 }
 
 sub debug {
@@ -84,7 +81,7 @@ sub debug {
 }
 
 sub error {
-  say "⚠ " . shift;
+  say "* " . shift;
 }
 
 sub upload {
