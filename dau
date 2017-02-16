@@ -107,7 +107,7 @@ sub upload {
     my $size   = $res->json->{attachments}->[0]->{size};
     my $width  = $res->json->{attachments}->[0]->{width};
     my $height = $res->json->{attachments}->[0]->{height};
-    info("uploaded ${width}x${height} $size bytes images to $url, submitted to webhook successfully");
+    info("uploaded ${width}x${height} $size byte image to $url");
   }
   else {
     debug(Dumper($tx));

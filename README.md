@@ -81,9 +81,13 @@ You will have to quote the path on windows, or anywhere where the directory path
 
 `--username` - supply a 'username' with the webhook submission. Slightly misleading, it basically provides some extra text next to the "Bot" display on the upload to the channel.
 
-In the example screenshot, this was set to "tardisx uploaded from EDD".
+In the example screenshot at the top of this README, this was set to "tardisx uploaded from EDD".
 
 `--debug` - provide extra debugging.
+
+## Example
+
+![Example output while running](http://i.imgur.com/cU7z13Y.png)
 
 ## Limitations/bugs
 
