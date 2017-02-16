@@ -10,8 +10,7 @@ Point it at your Steam screenshot folder, or similar, and shortly after you hit 
 
 * A folder where screenshots are stored
 * A [discord webhook](https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
-* This script
-* perl installed, or one of the provided binaries
+* This script and perl, or one of the provided binaries
 
 ## Getting started
 
