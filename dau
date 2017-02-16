@@ -18,6 +18,7 @@ my $debug;
 my $now         = time();
 my $error_count = 0;
 my $error_max   = 10;
+my $version     = '0.1';
 
 GetOptions(
   "webhook=s"   => \$webhook_url,
@@ -36,7 +37,11 @@ if (! $webhook_url) {
 
 sub usage {
   my $error = shift || "";
-  say "$0 --webhook url [--directory /some/path] [--username \"name to post as\"] [--watch n]";
+  my $indent = " " x length($0);
+  say "dau $version - https://github.com/tardisx/discord-auto-upload\n";
+  say "$0 --webhook <url> [--directory </some/path>]";
+  say "$indent [--username <\"custom username\">] [--watch <n>]\n";
+  say "The current directory will be used if no directory is specified.\n";
   say "error: $error" if $error;
   exit defined $error ? 1 : 0;
 }
