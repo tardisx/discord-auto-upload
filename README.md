@@ -87,8 +87,9 @@ In the example screenshot, this was set to "tardisx uploaded from EDD".
 
 ## Limitations/bugs
 
-* Only files ending jpg, gif or png are uploaded
+* Only files ending jpg, gif or png are uploaded.
 * Subdirectories are not scanned.
+* If multiple screenshots occur quickly (<1 second apart) not all may be uploaded.
 
 ## TODO
 This is just a quick hack. Open to suggestions on new features and improvements.
