@@ -11,13 +11,23 @@ Point it at your Steam screenshot folder, or similar, and shortly after you hit 
 * A folder where screenshots are stored
 * A [discord webhook](https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
 * This script
-* perl installed (or the windows binary)
+* perl installed, or one of the provided binaries
 
 ## Getting started
 
 ### Linux
 
-* Download this script:
+#### Standalone binary
+
+* Grab the latest binary from `https://github.com/tardisx/discord-auto-upload/releases/latest` called 'dau-linux.gz'.
+* `gunzip dau-linux.gz`
+* `mv dau-linux dau`
+* `chmod +x dau`
+* put `dau` somewhere on your path
+
+#### From Source
+
+* Download the script:
 
 `curl -O https://raw.githubusercontent.com/tardisx/discord-auto-upload/master/dau`
 
@@ -37,13 +47,23 @@ Ubuntu/Debian: `sudo apt-get install libmojolicious-perl libio-socket-ssl-perl`
 
 ### Mac
 
+#### Standalone binary
+
+* Grab the latest binary from `https://github.com/tardisx/discord-auto-upload/releases/latest` called 'dau-mac.gz'.
+* `gunzip dau-mac.gz`
+* `mv dau-mac dau`
+* `chmod +x dau`
+* put `dau` somewhere on your path
+
+#### From source
+
 Basically the same as Linux above. [Perlbrew](https://perlbrew.pl) is highly recommended so as not to disturb the system perl. No need for superuser access then either.
 
 ### Windows
 
-* Grab the windows exe file:
+* Grab the latest windows exe
 
-`http://tba`
+`https://github.com/tardisx/discord-auto-upload/releases/latest`
 
 * Optional, put it somewhere on your path
 * Open a command prompt
@@ -54,6 +74,8 @@ Basically the same as Linux above. [Perlbrew](https://perlbrew.pl) is highly rec
 If you want to hack it, audit it, or don't trust my exe, you can install
 [Strawberry Perl](http://strawberryperl.com) and run it using that directly.
 You'll need the same dependencies mentioned above in the Linux setup.
+
+If you want to build your own .exe, see BINARIES.md
 
 ## Using it
 
