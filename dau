@@ -5,7 +5,7 @@ use warnings;
 
 use feature 'say';
 
-use IO::Socket::SSL
+use IO::Socket::SSL;
 use Mojo::UserAgent;
 use Getopt::Long qw/GetOptions/;
 use Data::Dumper qw/Dumper/;
