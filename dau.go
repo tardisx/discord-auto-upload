@@ -16,7 +16,7 @@ import (
   "io/ioutil"
 )
 
-var current_version = "0.1"
+var current_version = "0.2"
 var last_check = time.Now()
 var new_last_check = time.Now()
 var webhook_url string
