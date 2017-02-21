@@ -24,20 +24,12 @@ var new_last_check = time.Now()
 var webhook_url  string
 var username     string
 
-type webhook_response struct {
-	Test string
-}
-
-func keepLines(s string, n int) string {
-	result := strings.Join(strings.Split(s, "\n")[:n], "\n")
-	return strings.Replace(result, "\r", "", -1)
-}
-
 func main() {
   webhook_opt, path, watch, username_opt := parse_options()
   webhook_url = webhook_opt
   username    = username_opt
 
+  check_path(path)
   check_updates()
 
   log.Print("Waiting for images to appear in ", path)
@@ -45,10 +37,20 @@ func main() {
   // wander the path, forever
   for {
     err := filepath.Walk(path, check_file)
-    if err != nil { log.Fatal("oh dear") }
-    //fmt.Printf("filepath.Walk() returned %v\n", err)
+    if err != nil { log.Fatal("could not watch path", err) }
     last_check = new_last_check
     time.Sleep(time.Duration(watch)*time.Second)
+  }
+}
+
+func check_path(path string) {
+  src, err := os.Stat(path)
+  if err != nil {
+    log.Fatal(err)
+  }
+  if !src.IsDir() {
+    log.Fatal(path, " is not a directory")
+    os.Exit(1)
   }
 }
 
@@ -80,15 +82,13 @@ func check_updates() {
   }
 
   if (current_version < latest.Tag_name) {
-    fmt.Println("A new version is available:", latest.Tag_name)
+    fmt.Printf("You are currently on version %s, but version %s is available\n", current_version, latest.Tag_name)
     fmt.Println("----------- Release Info -----------")
     fmt.Println(latest.Body)
     fmt.Println("------------------------------------")
-    fmt.Println("( You are currently on version:", current_version, ")")
   }
 
 }
-
 
 func parse_options() (webhook_url string, path string, watch int, username string) {
 
@@ -154,9 +154,7 @@ func file_eligible(file string) (bool) {
 func process_file(file string) {
   log.Print("Uploading ", file)
 
-  extraParams := map[string]string{
-  //  "username":    "Some username",
-  }
+  extraParams := map[string]string{ }
 
   if (username != "") {
     extraParams["username"] = username
@@ -173,7 +171,7 @@ func process_file(file string) {
 
   type DiscordAPIResponse struct {
     Attachments []DiscordAPIResponseAttachment
-    id int64
+    Id int64 `json:",string"`
   }
 
   request, err := newfileUploadRequest(webhook_url, extraParams, "file", file)
@@ -205,7 +203,7 @@ func process_file(file string) {
 
     if (err != nil) {
       log.Print("could not parse JSON: ", err)
-      fmt.Println("Response was:", res_body)
+      fmt.Println("Response was:", string(res_body[:]))
       return
     }
     if (len(res.Attachments) < 1) {
@@ -217,7 +215,7 @@ func process_file(file string) {
     rate := float64(a.Size) / elapsed.Seconds() / 1024.0
 
     log.Printf("Uploaded to %s %dx%d", a.Url, a.Width, a.Height)
-    log.Printf("%d bytes transferred in %.2f seconds (%.2f KiB/s)",  a.Size, elapsed.Seconds(), rate)
+    log.Printf("id: %d, %d bytes transferred in %.2f seconds (%.2f KiB/s)", res.Id, a.Size, elapsed.Seconds(), rate)
   }
 
 }
