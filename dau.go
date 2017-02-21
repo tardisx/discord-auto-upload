@@ -16,10 +16,13 @@ import (
   "io/ioutil"
 )
 
-var current_version = "0.2"
-var last_check = time.Now()
+var current_version = "0.3"
+
+var last_check     = time.Now()
 var new_last_check = time.Now()
-var webhook_url string
+
+var webhook_url  string
+var username     string
 
 type webhook_response struct {
 	Test string
@@ -31,8 +34,9 @@ func keepLines(s string, n int) string {
 }
 
 func main() {
-  webhook, path, watch := parse_options()
-  webhook_url = webhook
+  webhook_opt, path, watch, username_opt := parse_options()
+  webhook_url = webhook_opt
+  username    = username_opt
 
   check_updates()
 
@@ -69,10 +73,10 @@ func check_updates() {
   err = json.Unmarshal(body, &latest)
 
   if (err != nil) {
-    log.Fatal("could not parse JSON", err)
+    log.Fatal("could not parse JSON: ", err)
   }
 
-  if (current_version != latest.Tag_name) {
+  if (current_version < latest.Tag_name) {
     fmt.Println("A new version is available:", latest.Tag_name)
     fmt.Println("----------- Release Info -----------")
     fmt.Println(latest.Body)
@@ -83,17 +87,34 @@ func check_updates() {
 }
 
 
-func parse_options() (webhook_url string, path string, watch int) {
+func parse_options() (webhook_url string, path string, watch int, username string) {
 
   // Declare the flags to be used
   // helpFlag    := getopt.Bool('h', "display help")
-  webhookFlag := getopt.StringLong("webhook",   'w', "", "webhook URL")
-  pathFlag    := getopt.StringLong("directory", 'd', "", "directory")
-  watchFlag   := getopt.Int16Long("watch", 's', 10, "time between scans")
+  webhookFlag  := getopt.StringLong("webhook",   'w', "", "discord webhook URL")
+  pathFlag     := getopt.StringLong("directory", 'd', "", "directory to scan, optional, defaults to current directory")
+  watchFlag    := getopt.Int16Long ("watch",     's', 10, "time between scans")
+  usernameFlag := getopt.StringLong("username",  'u', "", "username for the bot upload")
+  helpFlag     := getopt.BoolLong  ("help",      'h', "help")
+  getopt.SetParameters("")
 
   getopt.Parse()
 
-  return *webhookFlag, *pathFlag, int(*watchFlag)
+  if (*helpFlag) {
+    getopt.PrintUsage(os.Stderr)
+    os.Exit(1)
+  }
+
+  if ! getopt.IsSet("directory") {
+    *pathFlag = "./"
+    log.Println("Defaulting to current directory")
+  }
+
+  if ! getopt.IsSet("webhook") {
+    log.Fatal("ERROR: You must specify a --webhook URL")
+  }
+
+  return *webhookFlag, *pathFlag, int(*watchFlag), *usernameFlag
 }
 
 func check_file(path string, f os.FileInfo, err error) error {
@@ -127,6 +148,10 @@ func process_file(file string) {
 
   extraParams := map[string]string{
   //  "username":    "Some username",
+  }
+
+  if (username != "") {
+    extraParams["username"] = username
   }
 
   type DiscordAPIResponseAttachment struct {
@@ -170,7 +195,7 @@ func process_file(file string) {
     err = json.Unmarshal(res_body, &res)
 
     if (err != nil) {
-      log.Fatal("could not parse JSON", err)
+      log.Print("could not parse JSON: ", err)
       fmt.Println("Response was:", res_body)
       return
     }
