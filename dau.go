@@ -96,13 +96,19 @@ func parse_options() (webhook_url string, path string, watch int, username strin
   watchFlag    := getopt.Int16Long ("watch",     's', 10, "time between scans")
   usernameFlag := getopt.StringLong("username",  'u', "", "username for the bot upload")
   helpFlag     := getopt.BoolLong  ("help",      'h', "help")
+  versionFlag  := getopt.BoolLong  ("version",   'v', "show version")
   getopt.SetParameters("")
 
   getopt.Parse()
 
   if (*helpFlag) {
     getopt.PrintUsage(os.Stderr)
-    os.Exit(1)
+    os.Exit(0)
+  }
+
+  if (*versionFlag) {
+    fmt.Printf("Version: %s\n", current_version)
+    os.Exit(0)
   }
 
   if ! getopt.IsSet("directory") {

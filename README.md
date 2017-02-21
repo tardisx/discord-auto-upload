@@ -42,11 +42,18 @@ and the directory to watch:
 
 `--directory /some/path/here` - the directory that screenshots will appear in.
 
-You will have to quote the path on windows, or anywhere where the directory path contains spaces.
+You will have to quote the path on windows, or anywhere where the directory path contains spaces. Note that
+subdirectories will also be scanned.
 
 Other parameters are:
 
 `--watch xx` - specify how many seconds to wait between scanning the directory. The default is 10 seconds.
+
+`--username <username>` - an arbitrary string to show as the bot's username in the channel.
+
+`--help` - show command line help.
+
+`--version` - show the version.
 
 ## Limitations/bugs
 
