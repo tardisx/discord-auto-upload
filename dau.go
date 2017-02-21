@@ -40,6 +40,8 @@ func main() {
 
   check_updates()
 
+  log.Print("Waiting for images to appear in ", path)
+
   // wander the path, forever
   for {
     err := filepath.Walk(path, check_file)
@@ -59,9 +61,10 @@ func check_updates() {
     Body     string
   }
 
-  resp, err := http.Get("https://api.github.com/repos/tardisx/discord-auto-upload/releases/latest")
+  client := &http.Client{ Timeout: time.Second * 5 }
+  resp, err := client.Get("https://api.github.com/repos/tardisx/discord-auto-upload/releases/latest")
   if (err != nil) {
-    log.Fatal("could not check for updates")
+    log.Fatal("could not check for updates:", err)
   }
   defer resp.Body.Close()
   body, err := ioutil.ReadAll(resp.Body)
@@ -124,7 +127,6 @@ func parse_options() (webhook_url string, path string, watch int, username strin
 }
 
 func check_file(path string, f os.FileInfo, err error) error {
-  // fmt.Println("Comparing", f.ModTime(), "to", last_check, "for", path)
 
   if f.ModTime().After(last_check) && f.Mode().IsRegular() {
 
@@ -178,7 +180,7 @@ func process_file(file string) {
   if err != nil {
     log.Fatal(err)
   }
-  client := &http.Client{}
+  client := &http.Client{ Timeout: time.Second * 30 }
   resp, err := client.Do(request)
   if err != nil {
 
