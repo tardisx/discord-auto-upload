@@ -16,7 +16,7 @@ import (
   "io/ioutil"
 )
 
-var current_version = "0.3"
+var current_version = "0.4"
 
 var last_check     = time.Now()
 var new_last_check = time.Now()
@@ -180,6 +180,7 @@ func process_file(file string) {
   if err != nil {
     log.Fatal(err)
   }
+  start := time.Now()
   client := &http.Client{ Timeout: time.Second * 30 }
   resp, err := client.Do(request)
   if err != nil {
@@ -212,7 +213,11 @@ func process_file(file string) {
       return
     }
     var a = res.Attachments[0]
-    log.Printf("Uploaded to %s %dx%d, %d bytes\n", a.Url, a.Width, a.Height, a.Size)
+    elapsed := time.Since(start)
+    rate := float64(a.Size) / elapsed.Seconds() / 1024.0
+
+    log.Printf("Uploaded to %s %dx%d", a.Url, a.Width, a.Height)
+    log.Printf("%d bytes transferred in %.2f seconds (%.2f KiB/s)",  a.Size, elapsed.Seconds(), rate)
   }
 
 }
