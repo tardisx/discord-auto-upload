@@ -12,9 +12,11 @@ import (
   "io"
   "bytes"
   "mime/multipart"
-  // "json"
+  "encoding/json"
+  "io/ioutil"
 )
 
+var current_version = "0.1"
 var last_check = time.Now()
 var new_last_check = time.Now()
 var webhook_url string
@@ -23,9 +25,16 @@ type webhook_response struct {
 	Test string
 }
 
+func keepLines(s string, n int) string {
+	result := strings.Join(strings.Split(s, "\n")[:n], "\n")
+	return strings.Replace(result, "\r", "", -1)
+}
+
 func main() {
   webhook, path, watch := parse_options()
   webhook_url = webhook
+
+  check_updates()
 
   // wander the path, forever
   for {
@@ -36,6 +45,43 @@ func main() {
     time.Sleep(time.Duration(watch)*time.Second)
   }
 }
+
+func check_updates() {
+
+  type GithubRelease struct {
+    Html_url string
+    Tag_name string
+    Name     string
+    Body     string
+  }
+
+  resp, err := http.Get("https://api.github.com/repos/tardisx/discord-auto-upload/releases/latest")
+  if (err != nil) {
+    log.Fatal("could not check for updates")
+  }
+  defer resp.Body.Close()
+  body, err := ioutil.ReadAll(resp.Body)
+  if (err != nil) {
+    log.Fatal("could not check read update response")
+  }
+
+  var latest GithubRelease
+  err = json.Unmarshal(body, &latest)
+
+  if (err != nil) {
+    log.Fatal("could not parse JSON", err)
+  }
+
+  if (current_version != latest.Tag_name) {
+    fmt.Println("A new version is available:", latest.Tag_name)
+    fmt.Println("----------- Release Info -----------")
+    fmt.Println(latest.Body)
+    fmt.Println("------------------------------------")
+    fmt.Println("( You are currently on version:", current_version, ")")
+  }
+
+}
+
 
 func parse_options() (webhook_url string, path string, watch int) {
 
@@ -77,11 +123,24 @@ func file_eligible(file string) (bool) {
 }
 
 func process_file(file string) {
-  fmt.Println("Uploading", file)
-  // resp, err := http.Post("http://example.com/upload", "image/jpeg", &buf)
+  log.Print("Uploading ", file)
 
   extraParams := map[string]string{
   //  "username":    "Some username",
+  }
+
+  type DiscordAPIResponseAttachment struct {
+    Url string
+    Proxy_url string
+    Size  int
+    Width int
+    Height int
+    Filename string
+  }
+
+  type DiscordAPIResponse struct {
+    Attachments []DiscordAPIResponseAttachment
+    id int64
   }
 
   request, err := newfileUploadRequest(webhook_url, extraParams, "file", file)
@@ -91,19 +150,38 @@ func process_file(file string) {
   client := &http.Client{}
   resp, err := client.Do(request)
   if err != nil {
-    log.Fatal(err)
+
+    log.Fatal("Error performing request:", err)
+
   } else {
-    body := &bytes.Buffer{}
-    _, err := body.ReadFrom(resp.Body)
-    if err != nil {
-      log.Fatal(err)
+
+    if (resp.StatusCode != 200) {
+      log.Print("Bad response from server:", resp.StatusCode)
+      return
+    }
+
+    res_body, err := ioutil.ReadAll(resp.Body)
+    if (err != nil) {
+      log.Fatal("could not deal with body", err)
     }
     resp.Body.Close()
-    fmt.Println(resp.StatusCode)
-    // fmt.Println(resp.Header)
-    // fmt.Println(body)
 
+    var res DiscordAPIResponse
+    err = json.Unmarshal(res_body, &res)
+
+    if (err != nil) {
+      log.Fatal("could not parse JSON", err)
+      fmt.Println("Response was:", res_body)
+      return
+    }
+    if (len(res.Attachments) < 1) {
+      log.Print("bad response - no attachments?")
+      return
+    }
+    var a = res.Attachments[0]
+    log.Printf("Uploaded to %s %dx%d, %d bytes\n", a.Url, a.Width, a.Height, a.Size)
   }
+
 }
 
 func newfileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {
