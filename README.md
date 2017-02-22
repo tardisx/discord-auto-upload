@@ -16,11 +16,16 @@ Point it at your Steam screenshot folder, or similar, and shortly after you hit 
 
 ### Binaries
 
-TBD
+Binaries are available for Mac, Linux and Windows [here](https://github.com/tardisx/discord-auto-upload/releases/latest)
+
+Put them somewhere on your path and run from the command line.
+
+The windows version comes with a .bat file to make this a little easier - edit it to include your webhook URL and
+other parameters, then you can simply double click it to start `dau` running.
 
 #### From source
 
-TBD
+You'll need to [download Go](https://golang.org/dl/) check the code out somewhere, and 'go build'.
 
 ## Using it
 
