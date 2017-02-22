@@ -16,7 +16,7 @@ import (
   "io/ioutil"
 )
 
-var current_version = "0.4"
+const current_version = "0.4"
 
 var last_check     = time.Now()
 var new_last_check = time.Now()
@@ -93,7 +93,6 @@ func check_updates() {
 func parse_options() (webhook_url string, path string, watch int, username string) {
 
   // Declare the flags to be used
-  // helpFlag    := getopt.Bool('h', "display help")
   webhookFlag  := getopt.StringLong("webhook",   'w', "", "discord webhook URL")
   pathFlag     := getopt.StringLong("directory", 'd', "", "directory to scan, optional, defaults to current directory")
   watchFlag    := getopt.Int16Long ("watch",     's', 10, "time between scans")
@@ -110,6 +109,7 @@ func parse_options() (webhook_url string, path string, watch int, username strin
   }
 
   if (*versionFlag) {
+    fmt.Println("dau - https://github.com/tardisx/discord-auto-upload")
     fmt.Printf("Version: %s\n", current_version)
     os.Exit(0)
   }
