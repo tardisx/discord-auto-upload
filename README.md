@@ -16,12 +16,12 @@ Point it at your Steam screenshot folder, or similar, and shortly after you hit 
 
 ### Binaries
 
-Binaries are available for Mac, Linux and Windows [here](https://github.com/tardisx/discord-auto-upload/releases/latest)
+Binaries are available for Mac, Linux and Windows [here](https://github.com/tardisx/discord-auto-upload/releases/latest).
 
 Put them somewhere on your path and run from the command line.
 
-The windows version comes with a .bat file to make this a little easier - edit it to include your webhook URL and
-other parameters, then you can simply double click it to start `dau` running.
+The windows version comes with a .bat file to make this a little easier - edit the `dau.bat` file to include your webhook URL and
+other parameters, then you can simply double click `dau.bat` to start `dau` running.
 
 #### From source
 
