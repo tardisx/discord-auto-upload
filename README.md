@@ -37,8 +37,6 @@ Thus, you do not have to worry about pointing `dau` at a directory full of image
 
 If `dau` is on your path, you can run it from your screenshot folder and there is then no need to specify the path to your images.
 
-Note that currently `dau` does not look in subdirectories. Please submit an issue if this is a use case for you.
-
 The only two mandatory command line parameters are the discord webhook URL:
 
 `--webhook URL` - the webhook URL (see [here](https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks) for details).
