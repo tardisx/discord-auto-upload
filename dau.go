@@ -17,32 +17,36 @@ import (
 	"github.com/pborman/getopt"
 )
 
-const currentVersion = "0.4"
+const currentVersion = "0.5"
 
 var lastCheck = time.Now()
 var newLastCheck = time.Now()
 
-var webhookURL string
-var username string
+// Config for the application
+type Config struct {
+	webhookURL string
+	path       string
+	watch      int
+	username   string
+}
 
 func main() {
-	webhookOpt, path, watch, usernameOpt := parseOptions()
-	webhookURL = webhookOpt
-	username = usernameOpt
 
-	checkPath(path)
+	config := parseOptions()
+
+	checkPath(config.path)
 	checkUpdates()
 
-	log.Print("Waiting for images to appear in ", path)
-
+	log.Print("Waiting for images to appear in ", config.path)
 	// wander the path, forever
 	for {
-		err := filepath.Walk(path, checkFile)
+		err := filepath.Walk(config.path,
+			func(path string, f os.FileInfo, err error) error { return checkFile(path, f, err, config) })
 		if err != nil {
 			log.Fatal("could not watch path", err)
 		}
 		lastCheck = newLastCheck
-		time.Sleep(time.Duration(watch) * time.Second)
+		time.Sleep(time.Duration(config.watch) * time.Second)
 	}
 }
 
@@ -93,8 +97,9 @@ func checkUpdates() {
 
 }
 
-func parseOptions() (webhookURL string, path string, watch int, username string) {
+func parseOptions() Config {
 
+	var newConfig Config
 	// Declare the flags to be used
 	webhookFlag := getopt.StringLong("webhook", 'w', "", "discord webhook URL")
 	pathFlag := getopt.StringLong("directory", 'd', "", "directory to scan, optional, defaults to current directory")
@@ -126,16 +131,21 @@ func parseOptions() (webhookURL string, path string, watch int, username string)
 		log.Fatal("ERROR: You must specify a --webhook URL")
 	}
 
-	return *webhookFlag, *pathFlag, int(*watchFlag), *usernameFlag
+	newConfig.path = *pathFlag
+	newConfig.webhookURL = *webhookFlag
+	newConfig.watch = int(*watchFlag)
+	newConfig.username = *usernameFlag
+
+	return newConfig
 }
 
-func checkFile(path string, f os.FileInfo, err error) error {
+func checkFile(path string, f os.FileInfo, err error, config Config) error {
 
 	if f.ModTime().After(lastCheck) && f.Mode().IsRegular() {
 
-		if fileEligible(path) {
+		if fileEligible(config, path) {
 			// process file
-			processFile(path)
+			processFile(config, path)
 		}
 
 		if newLastCheck.Before(f.ModTime()) {
@@ -146,7 +156,7 @@ func checkFile(path string, f os.FileInfo, err error) error {
 	return nil
 }
 
-func fileEligible(file string) bool {
+func fileEligible(config Config, file string) bool {
 	extension := strings.ToLower(filepath.Ext(file))
 	if extension == ".png" || extension == ".jpg" || extension == ".gif" {
 		return true
@@ -154,13 +164,13 @@ func fileEligible(file string) bool {
 	return false
 }
 
-func processFile(file string) {
+func processFile(config Config, file string) {
 	log.Print("Uploading ", file)
 
 	extraParams := map[string]string{}
 
-	if username != "" {
-		extraParams["username"] = username
+	if config.username != "" {
+		extraParams["username"] = config.username
 	}
 
 	type DiscordAPIResponseAttachment struct {
@@ -177,7 +187,7 @@ func processFile(file string) {
 		ID          int64 `json:",string"`
 	}
 
-	request, err := newfileUploadRequest(webhookURL, extraParams, "file", file)
+	request, err := newfileUploadRequest(config.webhookURL, extraParams, "file", file)
 	if err != nil {
 		log.Fatal(err)
 	}
