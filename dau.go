@@ -14,7 +14,15 @@ import (
 	"strings"
 	"time"
 
+	"image"
+
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+
+	"github.com/fogleman/gg"
 	"github.com/pborman/getopt"
+	"golang.org/x/image/font/inconsolata"
 )
 
 const currentVersion = "0.5"
@@ -165,6 +173,11 @@ func fileEligible(config Config, file string) bool {
 }
 
 func processFile(config Config, file string) {
+
+	log.Print("Munging ", file)
+
+	mungeFile(file)
+
 	log.Print("Uploading ", file)
 
 	extraParams := map[string]string{}
@@ -262,4 +275,38 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 	req, err := http.NewRequest("POST", uri, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	return req, err
+}
+
+func mungeFile(path string) {
+
+	reader, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer reader.Close()
+
+	im, _, err := image.Decode(reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+	bounds := im.Bounds()
+	// var S float64 = float64(bounds.Max.X)
+
+	dc := gg.NewContext(bounds.Max.X, bounds.Max.Y)
+	dc.Clear()
+	dc.SetRGB(0, 0, 0)
+
+	dc.SetFontFace(inconsolata.Regular8x16)
+
+	dc.DrawImage(im, 0, 0)
+
+	dc.DrawRoundedRectangle(0, float64(bounds.Max.Y-18.0), 320, float64(bounds.Max.Y), 0)
+	dc.SetRGB(0, 0, 0)
+	dc.Fill()
+
+	dc.SetRGB(1, 1, 1)
+
+	dc.DrawString("github.com/tardisx/discord-auto-upload", 5.0, float64(bounds.Max.Y)-5.0)
+
+	dc.SavePNG("../out.png")
 }
