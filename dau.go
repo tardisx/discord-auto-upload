@@ -114,7 +114,7 @@ func parseOptions() Config {
 	pathFlag := getopt.StringLong("directory", 'd', "", "directory to scan, optional, defaults to current directory")
 	watchFlag := getopt.Int16Long("watch", 's', 10, "time between scans")
 	usernameFlag := getopt.StringLong("username", 'u', "", "username for the bot upload")
-	noWatermarkFlag := getopt.BoolLong("nowatermark", 'n', "do not put a watermark on images before uploading")
+	noWatermarkFlag := getopt.BoolLong("no-watermark", 'n', "do not put a watermark on images before uploading")
 	helpFlag := getopt.BoolLong("help", 'h', "help")
 	versionFlag := getopt.BoolLong("version", 'v', "show version")
 	getopt.SetParameters("")

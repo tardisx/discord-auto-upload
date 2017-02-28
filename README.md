@@ -54,6 +54,8 @@ Other parameters are:
 
 `--username <username>` - an arbitrary string to show as the bot's username in the channel.
 
+`--no-watermark` - don't watermark images with a reference to this tool.
+
 `--help` - show command line help.
 
 `--version` - show the version.
