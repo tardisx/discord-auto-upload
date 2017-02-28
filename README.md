@@ -50,6 +50,8 @@ subdirectories will also be scanned.
 
 Other parameters are:
 
+`--exclude <string>` - exclude any files that contain this string (commonly used to avoid uploading thumbnails).
+
 `--watch xx` - specify how many seconds to wait between scanning the directory. The default is 10 seconds.
 
 `--username <username>` - an arbitrary string to show as the bot's username in the channel.

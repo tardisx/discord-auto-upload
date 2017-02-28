@@ -25,7 +25,7 @@ import (
 	"golang.org/x/image/font/inconsolata"
 )
 
-const currentVersion = "0.5"
+const currentVersion = "0.6"
 
 var lastCheck = time.Now()
 var newLastCheck = time.Now()
@@ -37,6 +37,7 @@ type Config struct {
 	watch       int
 	username    string
 	noWatermark bool
+	exclude     string
 }
 
 func main() {
@@ -102,6 +103,7 @@ func checkUpdates() {
 		fmt.Println("----------- Release Info -----------")
 		fmt.Println(latest.Body)
 		fmt.Println("------------------------------------")
+		fmt.Println("Upgrade at https://github.com/tardisx/discord-auto-upload/releases/latest")
 	}
 
 }
@@ -114,6 +116,7 @@ func parseOptions() Config {
 	pathFlag := getopt.StringLong("directory", 'd', "", "directory to scan, optional, defaults to current directory")
 	watchFlag := getopt.Int16Long("watch", 's', 10, "time between scans")
 	usernameFlag := getopt.StringLong("username", 'u', "", "username for the bot upload")
+	excludeFlag := getopt.StringLong("exclude", 'x', "", "exclude files containing this string")
 	noWatermarkFlag := getopt.BoolLong("no-watermark", 'n', "do not put a watermark on images before uploading")
 	helpFlag := getopt.BoolLong("help", 'h', "help")
 	versionFlag := getopt.BoolLong("version", 'v', "show version")
@@ -146,6 +149,7 @@ func parseOptions() Config {
 	newConfig.watch = int(*watchFlag)
 	newConfig.username = *usernameFlag
 	newConfig.noWatermark = *noWatermarkFlag
+	newConfig.exclude = *excludeFlag
 
 	return newConfig
 }
@@ -168,10 +172,16 @@ func checkFile(path string, f os.FileInfo, err error, config Config) error {
 }
 
 func fileEligible(config Config, file string) bool {
+
+	if config.exclude != "" && strings.Contains(file, config.exclude) {
+		return false
+	}
+
 	extension := strings.ToLower(filepath.Ext(file))
 	if extension == ".png" || extension == ".jpg" || extension == ".gif" {
 		return true
 	}
+
 	return false
 }
 
