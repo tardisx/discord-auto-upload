@@ -178,7 +178,7 @@ func fileEligible(config Config, file string) bool {
 func processFile(config Config, file string) {
 
 	if !config.noWatermark {
-		log.Print("Munging ", file)
+		log.Print("Copying to temp location and watermarking ", file)
 		file = mungeFile(file)
 	}
 
@@ -204,54 +204,81 @@ func processFile(config Config, file string) {
 		ID          int64 `json:",string"`
 	}
 
-	request, err := newfileUploadRequest(config.webhookURL, extraParams, "file", file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	start := time.Now()
-	client := &http.Client{Timeout: time.Second * 30}
-	resp, err := client.Do(request)
-	if err != nil {
-
-		log.Fatal("Error performing request:", err)
-
-	} else {
-
-		if resp.StatusCode != 200 {
-			log.Print("Bad response from server:", resp.StatusCode)
-			return
-		}
-
-		resBody, err := ioutil.ReadAll(resp.Body)
+	var retriesRemaining = 5
+	for retriesRemaining > 0 {
+		request, err := newfileUploadRequest(config.webhookURL, extraParams, "file", file)
 		if err != nil {
-			log.Fatal("could not deal with body", err)
+			log.Fatal(err)
 		}
-		resp.Body.Close()
-
-		var res DiscordAPIResponse
-		err = json.Unmarshal(resBody, &res)
-
+		start := time.Now()
+		client := &http.Client{Timeout: time.Second * 30}
+		resp, err := client.Do(request)
 		if err != nil {
-			log.Print("could not parse JSON: ", err)
-			fmt.Println("Response was:", string(resBody[:]))
-			return
-		}
-		if len(res.Attachments) < 1 {
-			log.Print("bad response - no attachments?")
-			return
-		}
-		var a = res.Attachments[0]
-		elapsed := time.Since(start)
-		rate := float64(a.Size) / elapsed.Seconds() / 1024.0
+			log.Print("Error performing request:", err)
+			retriesRemaining--
+			sleepForRetries(retriesRemaining)
+			continue
+		} else {
 
-		log.Printf("Uploaded to %s %dx%d", a.URL, a.Width, a.Height)
-		log.Printf("id: %d, %d bytes transferred in %.2f seconds (%.2f KiB/s)", res.ID, a.Size, elapsed.Seconds(), rate)
+			if resp.StatusCode != 200 {
+				log.Print("Bad response from server:", resp.StatusCode)
+				retriesRemaining--
+				sleepForRetries(retriesRemaining)
+				continue
+			}
 
-		if !config.noWatermark {
-			os.Remove(file)
+			resBody, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Print("could not deal with body: ", err)
+				retriesRemaining--
+				sleepForRetries(retriesRemaining)
+				continue
+			}
+			resp.Body.Close()
+
+			var res DiscordAPIResponse
+			err = json.Unmarshal(resBody, &res)
+
+			if err != nil {
+				log.Print("could not parse JSON: ", err)
+				fmt.Println("Response was:", string(resBody[:]))
+				retriesRemaining--
+				sleepForRetries(retriesRemaining)
+				continue
+			}
+			if len(res.Attachments) < 1 {
+				log.Print("bad response - no attachments?")
+				retriesRemaining--
+				sleepForRetries(retriesRemaining)
+				continue
+			}
+			var a = res.Attachments[0]
+			elapsed := time.Since(start)
+			rate := float64(a.Size) / elapsed.Seconds() / 1024.0
+
+			log.Printf("Uploaded to %s %dx%d", a.URL, a.Width, a.Height)
+			log.Printf("id: %d, %d bytes transferred in %.2f seconds (%.2f KiB/s)", res.ID, a.Size, elapsed.Seconds(), rate)
+			break
 		}
 	}
 
+	if !config.noWatermark {
+		log.Print("Removing temporary file ", file)
+		os.Remove(file)
+	}
+
+	if retriesRemaining == 0 {
+		log.Fatal("Failed to upload, even after retries")
+	}
+}
+
+func sleepForRetries(retry int) {
+	if retry == 0 {
+		return
+	}
+	retryTime := (6-retry)*(6-retry) + 6
+	log.Printf("Will retry in %d seconds (%d remaining attempts)", retryTime, retry)
+	// time.Sleep(time.Duration(retryTime) * time.Second)
 }
 
 func newfileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {
