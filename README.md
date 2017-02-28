@@ -1,4 +1,4 @@
-# Automatically upload screenshots from your computer into a discord channel
+# Automatically upload screenshots into a discord channel
 
 This program automatically uploads new screenshots that appear in a folder on your computer to Discord and posts them in a channel:
 
