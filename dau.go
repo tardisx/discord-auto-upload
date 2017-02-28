@@ -32,10 +32,11 @@ var newLastCheck = time.Now()
 
 // Config for the application
 type Config struct {
-	webhookURL string
-	path       string
-	watch      int
-	username   string
+	webhookURL  string
+	path        string
+	watch       int
+	username    string
+	noWatermark bool
 }
 
 func main() {
@@ -113,6 +114,7 @@ func parseOptions() Config {
 	pathFlag := getopt.StringLong("directory", 'd', "", "directory to scan, optional, defaults to current directory")
 	watchFlag := getopt.Int16Long("watch", 's', 10, "time between scans")
 	usernameFlag := getopt.StringLong("username", 'u', "", "username for the bot upload")
+	noWatermarkFlag := getopt.BoolLong("nowatermark", 'n', "do not put a watermark on images before uploading")
 	helpFlag := getopt.BoolLong("help", 'h', "help")
 	versionFlag := getopt.BoolLong("version", 'v', "show version")
 	getopt.SetParameters("")
@@ -143,6 +145,7 @@ func parseOptions() Config {
 	newConfig.webhookURL = *webhookFlag
 	newConfig.watch = int(*watchFlag)
 	newConfig.username = *usernameFlag
+	newConfig.noWatermark = *noWatermarkFlag
 
 	return newConfig
 }
@@ -174,9 +177,10 @@ func fileEligible(config Config, file string) bool {
 
 func processFile(config Config, file string) {
 
-	log.Print("Munging ", file)
-
-	mungeFile(file)
+	if !config.noWatermark {
+		log.Print("Munging ", file)
+		file = mungeFile(file)
+	}
 
 	log.Print("Uploading ", file)
 
@@ -242,6 +246,10 @@ func processFile(config Config, file string) {
 
 		log.Printf("Uploaded to %s %dx%d", a.URL, a.Width, a.Height)
 		log.Printf("id: %d, %d bytes transferred in %.2f seconds (%.2f KiB/s)", res.ID, a.Size, elapsed.Seconds(), rate)
+
+		if !config.noWatermark {
+			os.Remove(file)
+		}
 	}
 
 }
@@ -277,7 +285,7 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 	return req, err
 }
 
-func mungeFile(path string) {
+func mungeFile(path string) string {
 
 	reader, err := os.Open(path)
 	if err != nil {
@@ -308,5 +316,14 @@ func mungeFile(path string) {
 
 	dc.DrawString("github.com/tardisx/discord-auto-upload", 5.0, float64(bounds.Max.Y)-5.0)
 
-	dc.SavePNG("../out.png")
+	tempfile, err := ioutil.TempFile("", "dau")
+	if err != nil {
+		log.Fatal(err)
+	}
+	tempfile.Close()
+	os.Remove(tempfile.Name())
+	actualName := tempfile.Name() + ".png"
+
+	dc.SavePNG(actualName)
+	return actualName
 }
