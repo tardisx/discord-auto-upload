@@ -23,6 +23,8 @@ import (
 	"github.com/fogleman/gg"
 	"github.com/pborman/getopt"
 	"golang.org/x/image/font/inconsolata"
+
+	"discord-auto-upload/web"
 )
 
 const currentVersion = "0.6"
@@ -46,6 +48,8 @@ func main() {
 
 	checkPath(config.path)
 	checkUpdates()
+
+	web.Init()
 
 	log.Print("Waiting for images to appear in ", config.path)
 	// wander the path, forever
