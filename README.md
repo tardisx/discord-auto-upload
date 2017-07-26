@@ -66,6 +66,7 @@ Other parameters are:
 
 * Only files ending jpg, gif or png are uploaded.
 * If multiple screenshots occur quickly (<1 second apart) not all may be uploaded.
+* Files to upload are determined by the file modification time. If you drag and drop existing files they will not be detected and uploaded. Only newly created files will be detected.
 
 ## TODO
 This is just a quick hack. Open to suggestions on new features and improvements.
