@@ -45,11 +45,10 @@ type Config struct {
 func main() {
 
 	config := parseOptions()
-
 	checkPath(config.path)
-	checkUpdates()
-
 	web.Init()
+
+	checkUpdates()
 
 	log.Print("Waiting for images to appear in ", config.path)
 	// wander the path, forever
