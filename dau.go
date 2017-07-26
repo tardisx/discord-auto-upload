@@ -27,7 +27,7 @@ import (
 	"discord-auto-upload/web"
 )
 
-const currentVersion = "0.6"
+const currentVersion = "0.7"
 
 var lastCheck = time.Now()
 var newLastCheck = time.Now()
@@ -86,7 +86,8 @@ func checkUpdates() {
 	client := &http.Client{Timeout: time.Second * 5}
 	resp, err := client.Get("https://api.github.com/repos/tardisx/discord-auto-upload/releases/latest")
 	if err != nil {
-		log.Fatal("could not check for updates:", err)
+		log.Print("WARNING: Update check failed: ", err)
+		return
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
