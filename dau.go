@@ -22,6 +22,7 @@ import (
 
 	"github.com/fogleman/gg"
 	"github.com/pborman/getopt"
+	"github.com/skratchdot/open-golang/open"
 	"golang.org/x/image/font/inconsolata"
 
 	"discord-auto-upload/web"
@@ -48,6 +49,9 @@ func main() {
 	checkPath(config.path)
 	wconfig := web.Init()
 	go processWebChanges(wconfig)
+
+	log.Print("Opening web browser")
+	open.Start("http://localhost:9090")
 
 	checkUpdates()
 
