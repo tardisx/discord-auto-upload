@@ -46,7 +46,8 @@ func main() {
 
 	config := parseOptions()
 	checkPath(config.path)
-	web.Init()
+	wconfig := web.Init()
+	go processWebChanges(wconfig)
 
 	checkUpdates()
 
@@ -60,6 +61,14 @@ func main() {
 		}
 		lastCheck = newLastCheck
 		time.Sleep(time.Duration(config.watch) * time.Second)
+	}
+}
+
+func processWebChanges(wc web.DAUWebServer) {
+	for {
+		change := <-wc.ConfigChange
+		log.Print(change)
+		log.Print("Got a change!")
 	}
 }
 
