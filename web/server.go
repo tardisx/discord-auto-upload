@@ -1,11 +1,11 @@
 package web
 
 import (
-	"discord-auto-upload/asset"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"github.com/tardisx/discord-auto-upload/assets"
 )
 
 // DAUWebServer - stuff for the web server
@@ -31,13 +31,13 @@ var wsConfig DAUWebServer
 // }
 
 func getIndex(w http.ResponseWriter, r *http.Request) {
-	data, err := asset.Asset("index.html")
+	data, err := assets.Asset("index.html")
 	if err != nil {
 		// Asset was not found.
 		fmt.Fprintln(w, err)
 	}
 	w.Write(data)
-
+//
 }
 
 func getSetWebhook(w http.ResponseWriter, r *http.Request) {

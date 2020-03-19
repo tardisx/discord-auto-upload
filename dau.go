@@ -1,5 +1,7 @@
 package main
 
+//go:generate go-bindata -pkg assets -o assets/static.go -prefix data/ data
+
 import (
 	"bytes"
 	"encoding/json"
@@ -25,12 +27,12 @@ import (
 	"github.com/skratchdot/open-golang/open"
 	"golang.org/x/image/font/inconsolata"
 
-	"discord-auto-upload/web"
+	"github.com/tardisx/discord-auto-upload/web"
 )
 
 const currentVersion = "0.7"
 
-var lastCheck = time.Now()
+var lastCheck    = time.Now()
 var newLastCheck = time.Now()
 
 // Config for the application
