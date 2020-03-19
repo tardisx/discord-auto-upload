@@ -30,7 +30,7 @@ foreach my $type (keys %build) {
 
 add_extras();
 
-system(qw{go-bindata -pkg asset -o asset/asset.go -prefix data/ data});
+system(qw{go generate});
 foreach my $type (keys %build) {
   local $ENV{GOOS}   = $build{$type}->{env}->{GOOS};
   local $ENV{GOARCH} = $build{$type}->{env}->{GOARCH};
