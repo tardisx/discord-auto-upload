@@ -66,6 +66,7 @@ func main() {
 			log.Fatal("could not watch path", err)
 		}
 		lastCheck = newLastCheck
+		log.Print("sleeping before next check");
 		time.Sleep(time.Duration(config.watch) * time.Second)
 	}
 }
@@ -235,6 +236,7 @@ func processFile(config Config, file string) {
 
 	var retriesRemaining = 5
 	for retriesRemaining > 0 {
+
 		request, err := newfileUploadRequest(config.webhookURL, extraParams, "file", file)
 		if err != nil {
 			log.Fatal(err)
@@ -251,6 +253,9 @@ func processFile(config Config, file string) {
 
 			if resp.StatusCode != 200 {
 				log.Print("Bad response from server:", resp.StatusCode)
+				if b, err := ioutil.ReadAll(resp.Body); err == nil {
+					log.Print("Body:", string(b))
+        }
 				retriesRemaining--
 				sleepForRetries(retriesRemaining)
 				continue
