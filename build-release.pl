@@ -19,9 +19,9 @@ system "mkdir", "release";
 system "mkdir", "dist";
 
 my %build = (
-  win   => { env => { GOOS => 'windows', GOARCH => '386' }, filename => 'dau.exe' },
-  linux => { env => { GOOS => 'linux',   GOARCH => '386' }, filename => 'dau' },
-  mac   => { env => { GOOS => 'darwin',  GOARCH => '386' }, filename => 'dau' },
+  win   => { env => { GOOS => 'windows', GOARCH => 'amd64' }, filename => 'dau.exe' },
+  linux => { env => { GOOS => 'linux',   GOARCH => 'amd64' }, filename => 'dau' },
+  mac   => { env => { GOOS => 'darwin',  GOARCH => 'amd64' }, filename => 'dau' },
 ); 
 
 foreach my $type (keys %build) {
