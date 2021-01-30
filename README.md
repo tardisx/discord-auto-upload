@@ -25,7 +25,7 @@ other parameters, then you can simply double click `dau.bat` to start `dau` runn
 
 #### From source
 
-You'll need to [download Go](https://golang.org/dl/) check the code out somewhere, and 'go build'.
+You'll need to [download Go](https://golang.org/dl/) check the code out somewhere, run 'go generate' and then 'go build'.
 
 ## Using it
 

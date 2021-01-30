@@ -2,4 +2,6 @@ dist
 release
 discord-auto-upload
 discord-auto-upload.exe
-asset
+assets
+*.png
+*.jpg
