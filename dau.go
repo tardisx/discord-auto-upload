@@ -27,13 +27,12 @@ import (
 	// "github.com/skratchdot/open-golang/open"
 	"golang.org/x/image/font/inconsolata"
 
-	"github.com/tardisx/discord-auto-upload/web"
 	"github.com/tardisx/discord-auto-upload/config"
+	"github.com/tardisx/discord-auto-upload/web"
 )
 
-var lastCheck    = time.Now()
+var lastCheck = time.Now()
 var newLastCheck = time.Now()
-
 
 func main() {
 
@@ -55,7 +54,7 @@ func main() {
 			log.Fatal("could not watch path", err)
 		}
 		lastCheck = newLastCheck
-		log.Print("sleeping before next check");
+		log.Print("sleeping before next check")
 		time.Sleep(time.Duration(config.Config.Watch) * time.Second)
 	}
 }
@@ -235,7 +234,7 @@ func processFile(file string) {
 				log.Print("Bad response from server:", resp.StatusCode)
 				if b, err := ioutil.ReadAll(resp.Body); err == nil {
 					log.Print("Body:", string(b))
-        }
+				}
 				retriesRemaining--
 				sleepForRetries(retriesRemaining)
 				continue
