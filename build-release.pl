@@ -3,11 +3,11 @@
 use strict;
 use warnings;
 
-open my $fh, "<", "dau.go" || die $!;
+open my $fh, "<", "config/config.go" || die $!;
 
 my $version;
 while (<$fh>) {
-  $version = $1 if /^const\s+currentVersion.*?"([\d\.]+)"/;
+  $version = $1 if /^const\s+CurrentVersion.*?"([\d\.]+)"/;
 }
 close $fh;
 

@@ -24,58 +24,39 @@ import (
 
 	"github.com/fogleman/gg"
 	"github.com/pborman/getopt"
-	"github.com/skratchdot/open-golang/open"
+	// "github.com/skratchdot/open-golang/open"
 	"golang.org/x/image/font/inconsolata"
 
 	"github.com/tardisx/discord-auto-upload/web"
+	"github.com/tardisx/discord-auto-upload/config"
 )
-
-const currentVersion = "0.7"
 
 var lastCheck    = time.Now()
 var newLastCheck = time.Now()
 
-// Config for the application
-type Config struct {
-	webhookURL  string
-	path        string
-	watch       int
-	username    string
-	noWatermark bool
-	exclude     string
-}
 
 func main() {
 
-	config := parseOptions()
-	checkPath(config.path)
-	wconfig := web.Init()
-	go processWebChanges(wconfig)
+	parseOptions()
+	checkPath(config.Config.Path)
 
-	log.Print("Opening web browser")
-	open.Start("http://localhost:9090")
+	// log.Print("Opening web browser")
+	// open.Start("http://localhost:9090")
+	go web.StartWebServer()
 
 	checkUpdates()
 
-	log.Print("Waiting for images to appear in ", config.path)
+	log.Print("Waiting for images to appear in ", config.Config.Path)
 	// wander the path, forever
 	for {
-		err := filepath.Walk(config.path,
-			func(path string, f os.FileInfo, err error) error { return checkFile(path, f, err, config) })
+		err := filepath.Walk(config.Config.Path,
+			func(path string, f os.FileInfo, err error) error { return checkFile(path, f, err) })
 		if err != nil {
 			log.Fatal("could not watch path", err)
 		}
 		lastCheck = newLastCheck
 		log.Print("sleeping before next check");
-		time.Sleep(time.Duration(config.watch) * time.Second)
-	}
-}
-
-func processWebChanges(wc web.DAUWebServer) {
-	for {
-		change := <-wc.ConfigChange
-		log.Print(change)
-		log.Print("Got a change!")
+		time.Sleep(time.Duration(config.Config.Watch) * time.Second)
 	}
 }
 
@@ -118,8 +99,8 @@ func checkUpdates() {
 		log.Fatal("could not parse JSON: ", err)
 	}
 
-	if currentVersion < latest.TagName {
-		fmt.Printf("You are currently on version %s, but version %s is available\n", currentVersion, latest.TagName)
+	if config.CurrentVersion < latest.TagName {
+		fmt.Printf("You are currently on version %s, but version %s is available\n", config.CurrentVersion, latest.TagName)
 		fmt.Println("----------- Release Info -----------")
 		fmt.Println(latest.Body)
 		fmt.Println("------------------------------------")
@@ -128,9 +109,8 @@ func checkUpdates() {
 
 }
 
-func parseOptions() Config {
+func parseOptions() {
 
-	var newConfig Config
 	// Declare the flags to be used
 	webhookFlag := getopt.StringLong("webhook", 'w', "", "discord webhook URL")
 	pathFlag := getopt.StringLong("directory", 'd', "", "directory to scan, optional, defaults to current directory")
@@ -151,7 +131,7 @@ func parseOptions() Config {
 
 	if *versionFlag {
 		fmt.Println("dau - https://github.com/tardisx/discord-auto-upload")
-		fmt.Printf("Version: %s\n", currentVersion)
+		fmt.Printf("Version: %s\n", config.CurrentVersion)
 		os.Exit(0)
 	}
 
@@ -164,23 +144,22 @@ func parseOptions() Config {
 		log.Fatal("ERROR: You must specify a --webhook URL")
 	}
 
-	newConfig.path = *pathFlag
-	newConfig.webhookURL = *webhookFlag
-	newConfig.watch = int(*watchFlag)
-	newConfig.username = *usernameFlag
-	newConfig.noWatermark = *noWatermarkFlag
-	newConfig.exclude = *excludeFlag
+	config.Config.Path = *pathFlag
+	config.Config.WebHookURL = *webhookFlag
+	config.Config.Watch = int(*watchFlag)
+	config.Config.Username = *usernameFlag
+	config.Config.NoWatermark = *noWatermarkFlag
+	config.Config.Exclude = *excludeFlag
 
-	return newConfig
 }
 
-func checkFile(path string, f os.FileInfo, err error, config Config) error {
+func checkFile(path string, f os.FileInfo, err error) error {
 
 	if f.ModTime().After(lastCheck) && f.Mode().IsRegular() {
 
-		if fileEligible(config, path) {
+		if fileEligible(path) {
 			// process file
-			processFile(config, path)
+			processFile(path)
 		}
 
 		if newLastCheck.Before(f.ModTime()) {
@@ -191,9 +170,9 @@ func checkFile(path string, f os.FileInfo, err error, config Config) error {
 	return nil
 }
 
-func fileEligible(config Config, file string) bool {
+func fileEligible(file string) bool {
 
-	if config.exclude != "" && strings.Contains(file, config.exclude) {
+	if config.Config.Exclude != "" && strings.Contains(file, config.Config.Exclude) {
 		return false
 	}
 
@@ -205,9 +184,9 @@ func fileEligible(config Config, file string) bool {
 	return false
 }
 
-func processFile(config Config, file string) {
+func processFile(file string) {
 
-	if !config.noWatermark {
+	if !config.Config.NoWatermark {
 		log.Print("Copying to temp location and watermarking ", file)
 		file = mungeFile(file)
 	}
@@ -216,8 +195,9 @@ func processFile(config Config, file string) {
 
 	extraParams := map[string]string{}
 
-	if config.username != "" {
-		extraParams["username"] = config.username
+	if config.Config.Username != "" {
+		log.Print("Overriding username with " + config.Config.Username)
+		extraParams["username"] = config.Config.Username
 	}
 
 	type DiscordAPIResponseAttachment struct {
@@ -237,7 +217,7 @@ func processFile(config Config, file string) {
 	var retriesRemaining = 5
 	for retriesRemaining > 0 {
 
-		request, err := newfileUploadRequest(config.webhookURL, extraParams, "file", file)
+		request, err := newfileUploadRequest(config.Config.WebHookURL, extraParams, "file", file)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -296,7 +276,7 @@ func processFile(config Config, file string) {
 		}
 	}
 
-	if !config.noWatermark {
+	if !config.Config.NoWatermark {
 		log.Print("Removing temporary file ", file)
 		os.Remove(file)
 	}
