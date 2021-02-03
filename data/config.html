@@ -18,6 +18,21 @@
      </div>
    </form>
 
+   <form class="">
+     <div class="form-row align-items-center config-item" data-key="directory">
+       <div class="col-sm-5 my-1">
+         <span>Directory to watch</span>
+       </div>
+       <div class="col-sm-4 my-1">
+         <label class="sr-only" for="inlineFormInputName">Name</label>
+         <input type="text" class="form-control rest-field" placeholder="/...">
+       </div>
+       <div class="col-auto my-1">
+         <button type="submit" class="btn btn-primary">update</button>
+       </div>
+     </div>
+   </form>
+
    <p class="lead">
      <a href="#" class="btn btn-lg btn-secondary">Learn more</a>
    </p>
@@ -28,12 +43,14 @@
 $(document).ready(function() {
   // populate each field
   $('.config-item').each(function() {
-    el = $(this);
-    $.get('/rest/config/'+el.data('key'))
-     .done(function(d) {
-       el.find('.rest-field').val(d.Value);
+    let el = $(this);
+    let key = el.data('key');
+
+    $.ajax({ method: 'get', url: '/rest/config/'+key})
+     .done(function(data) {
+       $(".config-item[data-key='"+key+"']").find('.rest-field').val(data.Value);
      });
-  });
+    });
 
   // respond to button clicks to update
   $('.config-item button').on('click', function(e,f) {
@@ -41,7 +58,11 @@ $(document).ready(function() {
     val = $(this).parents('.config-item').find('.rest-field').val();
     $.post('/rest/config/'+key, { value: val })
      .done(function(d) {
-       alert('Updated config');
+       if (d.Success) {
+         alert('Updated config');
+       } else {
+         alert("Error: " + d.Error);
+       }
      });
 
     return false;
