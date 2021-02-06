@@ -25,6 +25,11 @@ type valueStringResponse struct {
 	Value   string `json: 'value'`
 }
 
+type valueBooleanResponse struct {
+	Success bool   `json: 'success'`
+	Value   bool   `json: 'value'`
+}
+
 type errorResponse struct {
 	Success bool   `json: 'success'`
 	Error   string `json: 'error'`
@@ -159,6 +164,43 @@ func getSetWatch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getSetNoWatermark(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == "GET" {
+		getResponse := valueBooleanResponse{Success: true, Value: config.Config.NoWatermark}
+
+		// I can't see any way this will fail
+		js, _ := json.Marshal(getResponse)
+		w.Write(js)
+	} else if r.Method == "POST" {
+		err := r.ParseForm()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+    v := r.PostForm.Get("value")
+
+		if v != "0" && v != "1" {
+     	response := errorResponse{Success: false, Error: fmt.Sprintf("Bad value for nowatermark: %v", err)}
+		 	js, _ := json.Marshal(response)
+		 	w.Write(js)
+		 	return
+		}
+
+		if v == "0" {
+			config.Config.NoWatermark = false
+		} else {
+			config.Config.NoWatermark = true
+		}
+    postResponse := valueBooleanResponse{Success: true, Value: config.Config.NoWatermark}
+
+		js, _ := json.Marshal(postResponse)
+		w.Write(js)
+	}
+}
+
+
 func getSetDirectory(w http.ResponseWriter, r *http.Request) {
 	log.Print("ok")
 	w.Header().Set("Content-Type", "application/json")
@@ -205,6 +247,7 @@ func StartWebServer() {
 	http.HandleFunc("/rest/config/webhook", getSetWebhook)
 	http.HandleFunc("/rest/config/username", getSetUsername)
 	http.HandleFunc("/rest/config/watch", getSetWatch)
+	http.HandleFunc("/rest/config/nowatermark", getSetNoWatermark)
 	http.HandleFunc("/rest/config/directory", getSetDirectory)
 
 	log.Print("Starting web server on http://localhost:9090")

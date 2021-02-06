@@ -55,7 +55,24 @@
        </div>
        <div class="col-sm-4 my-1">
          <label class="sr-only" for="inlineFormInputName">Seconds</label>
-         <input type="text" class="form-control rest-field" placeholder="/...">
+         <input type="text" class="form-control rest-field " placeholder="/...">
+       </div>
+       <div class="col-auto my-1">
+         <button type="submit" class="btn btn-primary">update</button>
+       </div>
+     </div>
+   </form>
+
+   <form class="">
+     <div class="form-row align-items-center config-item" data-key="nowatermark">
+       <div class="col-sm-5 my-1">
+         <span>Do not watermark images</span>
+       </div>
+       <div class="col-sm-4 my-1">
+         <div class="custom-control custom-switch">
+           <input type="checkbox" class="custom-control-input rest-field rest-field-boolean" id="customSwitch1">
+           <label class="custom-control-label" for="customSwitch1"><span style="display: none;">😭</span></label>
+         </div>
        </div>
        <div class="col-auto my-1">
          <button type="submit" class="btn btn-primary">update</button>
@@ -78,7 +95,13 @@ $(document).ready(function() {
 
     $.ajax({ method: 'get', url: '/rest/config/'+key})
      .done(function(data) {
-       $(".config-item[data-key='"+key+"']").find('.rest-field').val(data.Value);
+       var this_el = $(".config-item[data-key='"+key+"']").find('.rest-field');
+       if (this_el.hasClass('rest-field-boolean')) {
+         this_el.prop('checked', data.Value);
+       }
+       else {
+         this_el.val(data.Value);
+       }
      });
     });
 
@@ -86,6 +109,9 @@ $(document).ready(function() {
   $('.config-item button').on('click', function(e,f) {
     key = $(this).parents('.config-item').data('key');
     val = $(this).parents('.config-item').find('.rest-field').val();
+    if ($(this).parents('.config-item').find('.rest-field-boolean')) {
+      val = $(this).parents('.config-item').find('.rest-field').prop('checked') ? 1 : 0;
+    }
     $.post('/rest/config/'+key, { value: val })
      .done(function(d) {
        if (d.Success) {
