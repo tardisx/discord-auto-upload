@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tardisx/discord-auto-upload/assets"
-	"log"
-	"net/http"
-	"strconv"
 	"github.com/tardisx/discord-auto-upload/config"
+	"log"
 	"mime"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"text/template"
 )
 
@@ -26,8 +26,8 @@ type valueStringResponse struct {
 }
 
 type valueBooleanResponse struct {
-	Success bool   `json: 'success'`
-	Value   bool   `json: 'value'`
+	Success bool `json: 'success'`
+	Value   bool `json: 'value'`
 }
 
 type errorResponse struct {
@@ -123,7 +123,6 @@ func getSetUsername(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func getSetWatch(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -139,7 +138,7 @@ func getSetWatch(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 
-    i, err := strconv.Atoi(r.PostForm.Get("value"))
+		i, err := strconv.Atoi(r.PostForm.Get("value"))
 
 		if err != nil {
 			response := errorResponse{Success: false, Error: fmt.Sprintf("Bad value for watch: %v", err)}
@@ -154,7 +153,6 @@ func getSetWatch(w http.ResponseWriter, r *http.Request) {
 			w.Write(js)
 			return
 		}
-
 
 		config.Config.Watch = i
 		postResponse := valueStringResponse{Success: true, Value: strconv.Itoa(config.Config.Watch)}
@@ -179,13 +177,13 @@ func getSetNoWatermark(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 
-    v := r.PostForm.Get("value")
+		v := r.PostForm.Get("value")
 
 		if v != "0" && v != "1" {
-     	response := errorResponse{Success: false, Error: fmt.Sprintf("Bad value for nowatermark: %v", err)}
-		 	js, _ := json.Marshal(response)
-		 	w.Write(js)
-		 	return
+			response := errorResponse{Success: false, Error: fmt.Sprintf("Bad value for nowatermark: %v", err)}
+			js, _ := json.Marshal(response)
+			w.Write(js)
+			return
 		}
 
 		if v == "0" {
@@ -193,13 +191,12 @@ func getSetNoWatermark(w http.ResponseWriter, r *http.Request) {
 		} else {
 			config.Config.NoWatermark = true
 		}
-    postResponse := valueBooleanResponse{Success: true, Value: config.Config.NoWatermark}
+		postResponse := valueBooleanResponse{Success: true, Value: config.Config.NoWatermark}
 
 		js, _ := json.Marshal(postResponse)
 		w.Write(js)
 	}
 }
-
 
 func getSetDirectory(w http.ResponseWriter, r *http.Request) {
 	log.Print("ok")
