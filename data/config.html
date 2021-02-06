@@ -19,12 +19,42 @@
    </form>
 
    <form class="">
+     <div class="form-row align-items-center config-item" data-key="username">
+       <div class="col-sm-5 my-1">
+         <span>Bot username (optional)</span>
+       </div>
+       <div class="col-sm-4 my-1">
+         <label class="sr-only" for="inlineFormInputName">Name</label>
+         <input type="text" class="form-control rest-field" placeholder="">
+       </div>
+       <div class="col-auto my-1">
+         <button type="submit" class="btn btn-primary">update</button>
+       </div>
+     </div>
+   </form>
+
+   <form class="">
      <div class="form-row align-items-center config-item" data-key="directory">
        <div class="col-sm-5 my-1">
          <span>Directory to watch</span>
        </div>
        <div class="col-sm-4 my-1">
          <label class="sr-only" for="inlineFormInputName">Name</label>
+         <input type="text" class="form-control rest-field" placeholder="/...">
+       </div>
+       <div class="col-auto my-1">
+         <button type="submit" class="btn btn-primary">update</button>
+       </div>
+     </div>
+   </form>
+
+   <form class="">
+     <div class="form-row align-items-center config-item" data-key="watch">
+       <div class="col-sm-5 my-1">
+         <span>Period between filesystem checks</span>
+       </div>
+       <div class="col-sm-4 my-1">
+         <label class="sr-only" for="inlineFormInputName">Seconds</label>
          <input type="text" class="form-control rest-field" placeholder="/...">
        </div>
        <div class="col-auto my-1">

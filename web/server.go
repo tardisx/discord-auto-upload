@@ -6,7 +6,7 @@ import (
 	"github.com/tardisx/discord-auto-upload/assets"
 	"log"
 	"net/http"
-	//	"strings"
+	"strconv"
 	"github.com/tardisx/discord-auto-upload/config"
 	"mime"
 	"os"
@@ -95,6 +95,70 @@ func getSetWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO there should be locks around all these config accesses
+func getSetUsername(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == "GET" {
+		getResponse := valueStringResponse{Success: true, Value: config.Config.Username}
+
+		// I can't see any way this will fail
+		js, _ := json.Marshal(getResponse)
+		w.Write(js)
+	} else if r.Method == "POST" {
+		err := r.ParseForm()
+		if err != nil {
+			log.Fatal(err)
+		}
+		config.Config.Username = r.PostForm.Get("value")
+		postResponse := valueStringResponse{Success: true, Value: config.Config.Username}
+
+		js, _ := json.Marshal(postResponse)
+		w.Write(js)
+	}
+}
+
+
+func getSetWatch(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == "GET" {
+		getResponse := valueStringResponse{Success: true, Value: strconv.Itoa(config.Config.Watch)}
+
+		// I can't see any way this will fail
+		js, _ := json.Marshal(getResponse)
+		w.Write(js)
+	} else if r.Method == "POST" {
+		err := r.ParseForm()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+    i, err := strconv.Atoi(r.PostForm.Get("value"))
+
+		if err != nil {
+			response := errorResponse{Success: false, Error: fmt.Sprintf("Bad value for watch: %v", err)}
+			js, _ := json.Marshal(response)
+			w.Write(js)
+			return
+		}
+
+		if i < 1 {
+			response := errorResponse{Success: false, Error: "must be > 0"}
+			js, _ := json.Marshal(response)
+			w.Write(js)
+			return
+		}
+
+
+		config.Config.Watch = i
+		postResponse := valueStringResponse{Success: true, Value: strconv.Itoa(config.Config.Watch)}
+
+		js, _ := json.Marshal(postResponse)
+		w.Write(js)
+	}
+}
+
 func getSetDirectory(w http.ResponseWriter, r *http.Request) {
 	log.Print("ok")
 	w.Header().Set("Content-Type", "application/json")
@@ -139,6 +203,8 @@ func getSetDirectory(w http.ResponseWriter, r *http.Request) {
 func StartWebServer() {
 	http.HandleFunc("/", getStatic)
 	http.HandleFunc("/rest/config/webhook", getSetWebhook)
+	http.HandleFunc("/rest/config/username", getSetUsername)
+	http.HandleFunc("/rest/config/watch", getSetWatch)
 	http.HandleFunc("/rest/config/directory", getSetDirectory)
 
 	log.Print("Starting web server on http://localhost:9090")
