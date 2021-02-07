@@ -39,15 +39,5 @@ foreach my $type (keys %build) {
 }
 
 sub add_extras {
-  # bat file for windows
-
-  open (my $fh, ">", "release/win/dau.bat") || die $!;
-  print $fh 'set WEBHOOK_URL=https://yourdiscordwebhookURLhere' . "\r\n";
-  print $fh 'set SCREENSHOTS="C:\your\screenshot\directory\here"' ."\r\n";
-  print $fh 'set USERNAME="Posted by Joe Bloggs"' . "\r\n";
-  print $fh 'set WATCH=10' . "\r\n";
-
-  print $fh 'dau.exe --webhook %WEBHOOK_URL% --directory %SCREENSHOTS% --username %USERNAME% --watch %WATCH%' . "\r\n";
-  print $fh 'pause' . "\r\n";
-  close $fh;
+  # we used to have a .bat file here, but no longer needed
 }
