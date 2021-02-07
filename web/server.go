@@ -206,7 +206,6 @@ func getSetNoWatermark(w http.ResponseWriter, r *http.Request) {
 }
 
 func getSetDirectory(w http.ResponseWriter, r *http.Request) {
-	log.Print("ok")
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method == "GET" {

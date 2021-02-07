@@ -55,7 +55,7 @@ func main() {
 			}
 			lastCheck = newLastCheck
 		}
-		log.Print("sleeping before next check")
+		log.Printf("sleeping for %ds before next check of %s", config.Config.Watch, config.Config.Path)
 		time.Sleep(time.Duration(config.Config.Watch) * time.Second)
 	}
 }
@@ -63,11 +63,11 @@ func main() {
 func checkPath(path string) bool {
 	src, err := os.Stat(path)
 	if err != nil {
-		log.Println("path problem: ", err)
+		log.Printf("Problem with path '%s': %s", path, err)
 		return false
 	}
 	if !src.IsDir() {
-		log.Println(path, " is not a directory")
+		log.Printf("Problem with path '%s': is not a directory", path)
 		return false
 	}
 	return true
@@ -287,7 +287,7 @@ func sleepForRetries(retry int) {
 	}
 	retryTime := (6-retry)*(6-retry) + 6
 	log.Printf("Will retry in %d seconds (%d remaining attempts)", retryTime, retry)
-	// time.Sleep(time.Duration(retryTime) * time.Second)
+	time.Sleep(time.Duration(retryTime) * time.Second)
 }
 
 func newfileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {

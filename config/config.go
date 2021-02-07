@@ -26,7 +26,9 @@ func LoadOrInit() {
   log.Printf("Trying to load from %s\n", configPath)
   _, err := os.Stat(configPath)
   if os.IsNotExist(err) {
-    log.Printf("Initialising empty config")
+    log.Printf("NOTE: No config file, writing out sample configuration")
+    log.Printf("You need to set the configuration via the web interface")
+
     Config.WebHookURL = ""
     Config.Path = homeDir() + string(os.PathSeparator) + "screenshots"
     Config.Watch = 10
