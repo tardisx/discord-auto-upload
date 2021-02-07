@@ -37,7 +37,6 @@ var newLastCheck = time.Now()
 func main() {
 
 	parseOptions()
-	checkPath(config.Config.Path)
 
 	// log.Print("Opening web browser")
 	// open.Start("http://localhost:9090")
@@ -48,26 +47,30 @@ func main() {
 	log.Print("Waiting for images to appear in ", config.Config.Path)
 	// wander the path, forever
 	for {
-		err := filepath.Walk(config.Config.Path,
-			func(path string, f os.FileInfo, err error) error { return checkFile(path, f, err) })
-		if err != nil {
-			log.Fatal("could not watch path", err)
+		if checkPath(config.Config.Path) {
+			err := filepath.Walk(config.Config.Path,
+				func(path string, f os.FileInfo, err error) error { return checkFile(path, f, err) })
+			if err != nil {
+				log.Fatal("could not watch path", err)
+			}
+			lastCheck = newLastCheck
 		}
-		lastCheck = newLastCheck
 		log.Print("sleeping before next check")
 		time.Sleep(time.Duration(config.Config.Watch) * time.Second)
 	}
 }
 
-func checkPath(path string) {
+func checkPath(path string) bool {
 	src, err := os.Stat(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("path problem: ", err)
+		return false
 	}
 	if !src.IsDir() {
-		log.Fatal(path, " is not a directory")
-		os.Exit(1)
+		log.Println(path, " is not a directory")
+		return false
 	}
+	return true
 }
 
 func checkUpdates() {
@@ -111,12 +114,7 @@ func checkUpdates() {
 func parseOptions() {
 
 	// Declare the flags to be used
-	webhookFlag := getopt.StringLong("webhook", 'w', "", "discord webhook URL")
-	pathFlag := getopt.StringLong("directory", 'd', "", "directory to scan, optional, defaults to current directory")
-	watchFlag := getopt.Int16Long("watch", 's', 10, "time between scans")
-	usernameFlag := getopt.StringLong("username", 'u', "", "username for the bot upload")
 	excludeFlag := getopt.StringLong("exclude", 'x', "", "exclude files containing this string")
-	noWatermarkFlag := getopt.BoolLong("no-watermark", 'n', "do not put a watermark on images before uploading")
 	helpFlag := getopt.BoolLong("help", 'h', "help")
 	versionFlag := getopt.BoolLong("version", 'v', "show version")
 	getopt.SetParameters("")
@@ -134,22 +132,15 @@ func parseOptions() {
 		os.Exit(0)
 	}
 
-	if !getopt.IsSet("directory") {
-		*pathFlag = "./"
-		log.Println("Defaulting to current directory")
-	}
+	// if !getopt.IsSet("webhook") {
+	// 	log.Fatal("ERROR: You must specify a --webhook URL")
+	// }
 
-	if !getopt.IsSet("webhook") {
-		log.Fatal("ERROR: You must specify a --webhook URL")
-	}
+	// grab the config
+	config.LoadOrInit()
 
-	config.Config.Path = *pathFlag
-	config.Config.WebHookURL = *webhookFlag
-	config.Config.Watch = int(*watchFlag)
-	config.Config.Username = *usernameFlag
-	config.Config.NoWatermark = *noWatermarkFlag
+	// overrides from command line
 	config.Config.Exclude = *excludeFlag
-
 }
 
 func checkFile(path string, f os.FileInfo, err error) error {
@@ -188,6 +179,11 @@ func processFile(file string) {
 	if !config.Config.NoWatermark {
 		log.Print("Copying to temp location and watermarking ", file)
 		file = mungeFile(file)
+	}
+
+	if config.Config.WebHookURL == "" {
+		log.Print("WebHookURL is not configured - cannot upload!")
+		return
 	}
 
 	log.Print("Uploading ", file)

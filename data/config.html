@@ -70,8 +70,9 @@
        </div>
        <div class="col-sm-4 my-1">
          <div class="custom-control custom-switch">
-           <input type="checkbox" class="custom-control-input rest-field rest-field-boolean" id="customSwitch1">
-           <label class="custom-control-label" for="customSwitch1"><span style="display: none;">😭</span></label>
+           <input type="checkbox" class="custom-control-input rest-field rest-field-boolean" id="input-nowatermark">
+           <label class="custom-control-label" for="input-nowatermark">&nbsp;</label>
+           <span id="sadness" style="">😭</span>
          </div>
        </div>
        <div class="col-auto my-1">
@@ -87,7 +88,18 @@
 
 
 <script>
+function update_sadness () {
+  if ($('#input-nowatermark').prop('checked')) {
+    $('#sadness').css('visibility','');
+  }
+  else {
+    $('#sadness').css('visibility','hidden');
+  }
+}
 $(document).ready(function() {
+
+  $('#input-nowatermark').on('click', function() { update_sadness(); });
+
   // populate each field
   $('.config-item').each(function() {
     let el = $(this);
@@ -102,6 +114,8 @@ $(document).ready(function() {
        else {
          this_el.val(data.Value);
        }
+       update_sadness();
+
      });
     });
 
@@ -109,7 +123,7 @@ $(document).ready(function() {
   $('.config-item button').on('click', function(e,f) {
     key = $(this).parents('.config-item').data('key');
     val = $(this).parents('.config-item').find('.rest-field').val();
-    if ($(this).parents('.config-item').find('.rest-field-boolean')) {
+    if ($(this).parents('.config-item').find('.rest-field-boolean').length) {
       val = $(this).parents('.config-item').find('.rest-field').prop('checked') ? 1 : 0;
     }
     $.post('/rest/config/'+key, { value: val })

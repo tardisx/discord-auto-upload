@@ -93,6 +93,7 @@ func getSetWebhook(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 		config.Config.WebHookURL = r.PostForm.Get("value")
+		config.SaveConfig()
 		postResponse := valueStringResponse{Success: true, Value: config.Config.WebHookURL}
 
 		js, _ := json.Marshal(postResponse)
@@ -116,6 +117,8 @@ func getSetUsername(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 		config.Config.Username = r.PostForm.Get("value")
+		config.SaveConfig()
+
 		postResponse := valueStringResponse{Success: true, Value: config.Config.Username}
 
 		js, _ := json.Marshal(postResponse)
@@ -155,6 +158,8 @@ func getSetWatch(w http.ResponseWriter, r *http.Request) {
 		}
 
 		config.Config.Watch = i
+		config.SaveConfig()
+
 		postResponse := valueStringResponse{Success: true, Value: strconv.Itoa(config.Config.Watch)}
 
 		js, _ := json.Marshal(postResponse)
@@ -191,6 +196,8 @@ func getSetNoWatermark(w http.ResponseWriter, r *http.Request) {
 		} else {
 			config.Config.NoWatermark = true
 		}
+		config.SaveConfig()
+
 		postResponse := valueBooleanResponse{Success: true, Value: config.Config.NoWatermark}
 
 		js, _ := json.Marshal(postResponse)
@@ -232,6 +239,8 @@ func getSetDirectory(w http.ResponseWriter, r *http.Request) {
 		}
 
 		config.Config.Path = newPath
+		config.SaveConfig()
+
 		postResponse := valueStringResponse{Success: true, Value: config.Config.Path}
 
 		js, _ := json.Marshal(postResponse)
