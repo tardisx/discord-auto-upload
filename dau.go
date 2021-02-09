@@ -114,7 +114,6 @@ func checkUpdates() {
 func parseOptions() {
 
 	// Declare the flags to be used
-	excludeFlag := getopt.StringLong("exclude", 'x', "", "exclude files containing this string")
 	helpFlag := getopt.BoolLong("help", 'h', "help")
 	versionFlag := getopt.BoolLong("version", 'v', "show version")
 	getopt.SetParameters("")
@@ -132,15 +131,8 @@ func parseOptions() {
 		os.Exit(0)
 	}
 
-	// if !getopt.IsSet("webhook") {
-	// 	log.Fatal("ERROR: You must specify a --webhook URL")
-	// }
-
 	// grab the config
 	config.LoadOrInit()
-
-	// overrides from command line
-	config.Config.Exclude = *excludeFlag
 }
 
 func checkFile(path string, f os.FileInfo, err error) error {

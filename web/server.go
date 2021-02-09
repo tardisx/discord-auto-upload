@@ -247,6 +247,30 @@ func getSetDirectory(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getSetExclude(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == "GET" {
+		getResponse := valueStringResponse{Success: true, Value: config.Config.Exclude}
+		// I can't see any way this will fail
+		js, _ := json.Marshal(getResponse)
+		w.Write(js)
+	} else if r.Method == "POST" {
+		err := r.ParseForm()
+		if err != nil {
+			log.Fatal(err)
+		}
+		config.Config.Exclude = r.PostForm.Get("value")
+		config.SaveConfig()
+
+		postResponse := valueStringResponse{Success: true, Value: config.Config.Exclude}
+
+		js, _ := json.Marshal(postResponse)
+		w.Write(js)
+	}
+}
+
+
 func StartWebServer() {
 	http.HandleFunc("/", getStatic)
 	http.HandleFunc("/rest/config/webhook", getSetWebhook)
@@ -254,6 +278,8 @@ func StartWebServer() {
 	http.HandleFunc("/rest/config/watch", getSetWatch)
 	http.HandleFunc("/rest/config/nowatermark", getSetNoWatermark)
 	http.HandleFunc("/rest/config/directory", getSetDirectory)
+	http.HandleFunc("/rest/config/exclude", getSetExclude)
+
 
 	log.Print("Starting web server on http://localhost:9090")
 	err := http.ListenAndServe(":9090", nil) // set listen port

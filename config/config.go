@@ -34,7 +34,7 @@ func LoadOrInit() {
     Config.Watch = 10
     SaveConfig()
   } else {
-     LoadConfig()
+    LoadConfig()
   }
 }
 

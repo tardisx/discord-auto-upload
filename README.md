@@ -31,12 +31,47 @@ saved in a file called '.dau.json' in your home directory.
 The first time you run it, you will need to configure at least the discord web hook and the watch path for
 `dau` to be useful.
 
-While running, `dau` will continually scan a directory for new images, and each time it finds one it will
-upload it to discord, via the discord web hook.
+While running, `dau` will continually scan a directory for new images, and each time it finds one it will upload it to discord, via the discord web hook.
 
 `dau` will only upload "new" screenshots, where "new" means a file that appears in a directory that it is watching, if it appears *after* it has started executing.
 
 Thus, you do not have to worry about pointing `dau` at a directory full of images, it will only upload new ones.
+
+## Configuration options
+
+See the web interface at http://localhost:9090 to configure `dau`.
+
+### 'Discord WebHook URL'
+
+The webhook URL from Discord. See https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks
+for more information on setting one up.
+
+### 'Bot Username'
+
+This is completely optional and can be any arbitrary string. It makes the upload
+appear to come from a different user (though this is visual only, and does not
+actually hide the bot identity in any way). You might like to set it to your own
+discord name.
+
+### 'Directory to watch'
+
+This is the path that `dau` will periodically inspect, looking for new images.
+Note that subdirectories are also scanned. You need to enter the full filesystem
+path here.
+
+### 'Period between filesystem checks'
+
+This is the number of seconds between which `dau` will look for new images.
+
+### 'Do not watermark images'
+
+This will disable the watermarking of images. I like it when you don't set this :-)
+
+### 'Files to exclude'
+
+This is a string to match against the filename to check for exclusions. The common
+use case is to use 'thumbnail' or similar if your image directory contains additional
+thumbnail files.
 
 ## Limitations/bugs
 
