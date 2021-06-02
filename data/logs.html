@@ -1,0 +1,35 @@
+
+ <main role="main" class="inner DAU">
+   <h1 class="DAU-heading">Config</h1>
+   <p class="lead">Discord-auto-upload logs</p>
+
+  <table class="table table-condensed">
+    <thead>
+      <tr>
+        <th>time</th><th>entry</th>
+      </tr>
+    </thead>
+    <tbody id="logs">
+
+    </tbody>
+  </table>
+
+</main>
+
+<script>
+$(document).ready(function() {
+    $.ajax({ method: 'get', url: '/rest/logs'})
+     .done(function(data) {
+       console.log(data);
+       $.each(data, function(i, d) {
+         console.log('do', d);
+        $('#logs').append(
+          $('<tr>').append(
+            $('<th>').text(d.ts), 
+            $('<td>').text(d.log)
+          )
+        );
+       });
+      });
+    });
+</script>

@@ -3,8 +3,6 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tardisx/discord-auto-upload/assets"
-	"github.com/tardisx/discord-auto-upload/config"
 	"log"
 	"mime"
 	"net/http"
@@ -13,6 +11,10 @@ import (
 	"regexp"
 	"strconv"
 	"text/template"
+	"time"
+
+	"github.com/tardisx/discord-auto-upload/assets"
+	"github.com/tardisx/discord-auto-upload/config"
 )
 
 // DAUWebServer - stuff for the web server
@@ -21,23 +23,30 @@ type DAUWebServer struct {
 }
 
 type valueStringResponse struct {
-	Success bool   `json: 'success'`
-	Value   string `json: 'value'`
+	Success bool   `json:"success"`
+	Value   string `json:"value"`
 }
 
 type valueBooleanResponse struct {
-	Success bool `json: 'success'`
-	Value   bool `json: 'value'`
+	Success bool `json:"success"`
+	Value   bool `json:"value"`
 }
 
 type errorResponse struct {
-	Success bool   `json: 'success'`
-	Error   string `json: 'error'`
+	Success bool   `json:"success"`
+	Error   string `json:"error"`
 }
+
+type LogEntry struct {
+	Timestamp time.Time `json:"ts"`
+	Entry     string    `json:"log"`
+}
+
+var logEntries []LogEntry
+var LogInput chan LogEntry
 
 func getStatic(w http.ResponseWriter, r *http.Request) {
 	// haha this is dumb and I should change it
-	// fmt.Println(r.URL)
 	re := regexp.MustCompile(`[^a-zA-Z0-9\.]`)
 	path := r.URL.Path[1:]
 	sanitized_path := re.ReplaceAll([]byte(path), []byte("_"))
@@ -270,8 +279,22 @@ func getSetExclude(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getLogs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	js, _ := json.Marshal(logEntries)
+	w.Write(js)
+}
 
 func StartWebServer() {
+	// wait for log entries
+	LogInput = make(chan LogEntry)
+	go func() {
+		for {
+			aLog := <-LogInput
+			logEntries = append(logEntries, aLog)
+		}
+	}()
+
 	http.HandleFunc("/", getStatic)
 	http.HandleFunc("/rest/config/webhook", getSetWebhook)
 	http.HandleFunc("/rest/config/username", getSetUsername)
@@ -280,11 +303,12 @@ func StartWebServer() {
 	http.HandleFunc("/rest/config/directory", getSetDirectory)
 	http.HandleFunc("/rest/config/exclude", getSetExclude)
 
-
-	log.Print("Starting web server on http://localhost:9090")
-	err := http.ListenAndServe(":9090", nil) // set listen port
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
-
+	http.HandleFunc("/rest/logs", getLogs)
+	go func() {
+		log.Print("Starting web server on http://localhost:9090")
+		err := http.ListenAndServe(":9090", nil) // set listen port
+		if err != nil {
+			log.Fatal("ListenAndServe: ", err)
+		}
+	}()
 }

@@ -24,6 +24,7 @@ import (
 
 	"github.com/fogleman/gg"
 	"github.com/pborman/getopt"
+
 	// "github.com/skratchdot/open-golang/open"
 	"golang.org/x/image/font/inconsolata"
 
@@ -40,11 +41,11 @@ func main() {
 
 	// log.Print("Opening web browser")
 	// open.Start("http://localhost:9090")
-	go web.StartWebServer()
+	web.StartWebServer()
 
 	checkUpdates()
 
-	log.Print("Waiting for images to appear in ", config.Config.Path)
+	sendLogToWeb(fmt.Sprintf("Waiting for images to appear in %s", config.Config.Path))
 	// wander the path, forever
 	for {
 		if checkPath(config.Config.Path) {
@@ -55,7 +56,7 @@ func main() {
 			}
 			lastCheck = newLastCheck
 		}
-		log.Printf("sleeping for %ds before next check of %s", config.Config.Watch, config.Config.Path)
+		sendLogToWeb(fmt.Sprintf("sleeping for %ds before next check of %s", config.Config.Watch, config.Config.Path))
 		time.Sleep(time.Duration(config.Config.Watch) * time.Second)
 	}
 }
@@ -82,10 +83,12 @@ func checkUpdates() {
 		Body    string
 	}
 
+	sendLogToWeb("checking for new version")
+
 	client := &http.Client{Timeout: time.Second * 5}
 	resp, err := client.Get("https://api.github.com/repos/tardisx/discord-auto-upload/releases/latest")
 	if err != nil {
-		log.Print("WARNING: Update check failed: ", err)
+		sendLogToWeb(fmt.Sprintf("WARNING: Update check failed: %v", err))
 		return
 	}
 	defer resp.Body.Close()
@@ -107,6 +110,7 @@ func checkUpdates() {
 		fmt.Println(latest.Body)
 		fmt.Println("------------------------------------")
 		fmt.Println("Upgrade at https://github.com/tardisx/discord-auto-upload/releases/latest")
+		sendLogToWeb(fmt.Sprintf("New version available: %s - download at https://github.com/tardisx/discord-auto-upload/releases/latest"))
 	}
 
 }
@@ -136,7 +140,6 @@ func parseOptions() {
 }
 
 func checkFile(path string, f os.FileInfo, err error) error {
-
 	if f.ModTime().After(lastCheck) && f.Mode().IsRegular() {
 
 		if fileEligible(path) {
@@ -150,6 +153,13 @@ func checkFile(path string, f os.FileInfo, err error) error {
 	}
 
 	return nil
+}
+
+func sendLogToWeb(entry string) {
+	web.LogInput <- web.LogEntry{
+		Timestamp: time.Now(),
+		Entry:     entry,
+	}
 }
 
 func fileEligible(file string) bool {
@@ -169,16 +179,16 @@ func fileEligible(file string) bool {
 func processFile(file string) {
 
 	if !config.Config.NoWatermark {
-		log.Print("Copying to temp location and watermarking ", file)
+		sendLogToWeb("Copying to temp location and watermarking ")
 		file = mungeFile(file)
 	}
 
 	if config.Config.WebHookURL == "" {
-		log.Print("WebHookURL is not configured - cannot upload!")
+		sendLogToWeb("WebHookURL is not configured - cannot upload!")
 		return
 	}
 
-	log.Print("Uploading ", file)
+	sendLogToWeb("Uploading")
 
 	extraParams := map[string]string{}
 
@@ -264,7 +274,7 @@ func processFile(file string) {
 	}
 
 	if !config.Config.NoWatermark {
-		log.Print("Removing temporary file ", file)
+		sendLogToWeb(fmt.Sprintf("Removing temporary file: %s", file))
 		os.Remove(file)
 	}
 
@@ -278,7 +288,7 @@ func sleepForRetries(retry int) {
 		return
 	}
 	retryTime := (6-retry)*(6-retry) + 6
-	log.Printf("Will retry in %d seconds (%d remaining attempts)", retryTime, retry)
+	sendLogToWeb(fmt.Sprintf("Will retry in %d seconds (%d remaining attempts)", retryTime, retry))
 	time.Sleep(time.Duration(retryTime) * time.Second)
 }
 
