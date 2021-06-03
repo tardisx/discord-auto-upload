@@ -80,6 +80,11 @@ thumbnail files.
 * Files to upload are determined by the file modification time. If you drag and drop existing files they will
   not be detected and uploaded. Only newly created files will be detected.
 
+## Troubleshooting
+
+Please check the "log" page on the web interface for information when things are
+not working as you expect.
+
 ## TODO
 This is just a relatively quick hack. Open to suggestions on new features and improvements.
 
