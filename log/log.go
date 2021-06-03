@@ -28,6 +28,9 @@ func init() {
 		for {
 			aLog := <-logInput
 			LogEntries = append(LogEntries, aLog)
+			for len(LogEntries) > 100 {
+				LogEntries = LogEntries[1:]
+			}
 		}
 	}()
 }
