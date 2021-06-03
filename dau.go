@@ -29,6 +29,7 @@ import (
 	"golang.org/x/image/font/inconsolata"
 
 	"github.com/tardisx/discord-auto-upload/config"
+	daulog "github.com/tardisx/discord-auto-upload/log"
 	"github.com/tardisx/discord-auto-upload/web"
 )
 
@@ -45,7 +46,7 @@ func main() {
 
 	checkUpdates()
 
-	sendLogToWeb(fmt.Sprintf("Waiting for images to appear in %s", config.Config.Path))
+	daulog.SendLog(fmt.Sprintf("Waiting for images to appear in %s", config.Config.Path), daulog.LogTypeInfo)
 	// wander the path, forever
 	for {
 		if checkPath(config.Config.Path) {
@@ -56,7 +57,7 @@ func main() {
 			}
 			lastCheck = newLastCheck
 		}
-		sendLogToWeb(fmt.Sprintf("sleeping for %ds before next check of %s", config.Config.Watch, config.Config.Path))
+		daulog.SendLog(fmt.Sprintf("sleeping for %ds before next check of %s", config.Config.Watch, config.Config.Path), daulog.LogTypeDebug)
 		time.Sleep(time.Duration(config.Config.Watch) * time.Second)
 	}
 }
@@ -83,12 +84,12 @@ func checkUpdates() {
 		Body    string
 	}
 
-	sendLogToWeb("checking for new version")
+	daulog.SendLog("checking for new version", daulog.LogTypeInfo)
 
 	client := &http.Client{Timeout: time.Second * 5}
 	resp, err := client.Get("https://api.github.com/repos/tardisx/discord-auto-upload/releases/latest")
 	if err != nil {
-		sendLogToWeb(fmt.Sprintf("WARNING: Update check failed: %v", err))
+		daulog.SendLog(fmt.Sprintf("WARNING: Update check failed: %v", err), daulog.LogTypeError)
 		return
 	}
 	defer resp.Body.Close()
@@ -110,7 +111,7 @@ func checkUpdates() {
 		fmt.Println(latest.Body)
 		fmt.Println("------------------------------------")
 		fmt.Println("Upgrade at https://github.com/tardisx/discord-auto-upload/releases/latest")
-		sendLogToWeb(fmt.Sprintf("New version available: %s - download at https://github.com/tardisx/discord-auto-upload/releases/latest"))
+		daulog.SendLog(fmt.Sprintf("New version available: %s - download at https://github.com/tardisx/discord-auto-upload/releases/latest"), daulog.LogTypeInfo)
 	}
 
 }
@@ -155,13 +156,6 @@ func checkFile(path string, f os.FileInfo, err error) error {
 	return nil
 }
 
-func sendLogToWeb(entry string) {
-	web.LogInput <- web.LogEntry{
-		Timestamp: time.Now(),
-		Entry:     entry,
-	}
-}
-
 func fileEligible(file string) bool {
 
 	if config.Config.Exclude != "" && strings.Contains(file, config.Config.Exclude) {
@@ -179,16 +173,16 @@ func fileEligible(file string) bool {
 func processFile(file string) {
 
 	if !config.Config.NoWatermark {
-		sendLogToWeb("Copying to temp location and watermarking ")
+		daulog.SendLog("Copying to temp location and watermarking ", daulog.LogTypeInfo)
 		file = mungeFile(file)
 	}
 
 	if config.Config.WebHookURL == "" {
-		sendLogToWeb("WebHookURL is not configured - cannot upload!")
+		daulog.SendLog("WebHookURL is not configured - cannot upload!", daulog.LogTypeError)
 		return
 	}
 
-	sendLogToWeb("Uploading")
+	daulog.SendLog("Uploading", daulog.LogTypeInfo)
 
 	extraParams := map[string]string{}
 
@@ -274,7 +268,7 @@ func processFile(file string) {
 	}
 
 	if !config.Config.NoWatermark {
-		sendLogToWeb(fmt.Sprintf("Removing temporary file: %s", file))
+		daulog.SendLog(fmt.Sprintf("Removing temporary file: %s", file), daulog.LogTypeDebug)
 		os.Remove(file)
 	}
 
@@ -288,7 +282,7 @@ func sleepForRetries(retry int) {
 		return
 	}
 	retryTime := (6-retry)*(6-retry) + 6
-	sendLogToWeb(fmt.Sprintf("Will retry in %d seconds (%d remaining attempts)", retryTime, retry))
+	daulog.SendLog(fmt.Sprintf("Will retry in %d seconds (%d remaining attempts)", retryTime, retry), daulog.LogTypeError)
 	time.Sleep(time.Duration(retryTime) * time.Second)
 }
 

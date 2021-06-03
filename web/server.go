@@ -11,10 +11,10 @@ import (
 	"regexp"
 	"strconv"
 	"text/template"
-	"time"
 
 	"github.com/tardisx/discord-auto-upload/assets"
 	"github.com/tardisx/discord-auto-upload/config"
+	daulog "github.com/tardisx/discord-auto-upload/log"
 )
 
 // DAUWebServer - stuff for the web server
@@ -36,14 +36,6 @@ type errorResponse struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error"`
 }
-
-type LogEntry struct {
-	Timestamp time.Time `json:"ts"`
-	Entry     string    `json:"log"`
-}
-
-var logEntries []LogEntry
-var LogInput chan LogEntry
 
 func getStatic(w http.ResponseWriter, r *http.Request) {
 	// haha this is dumb and I should change it
@@ -280,20 +272,21 @@ func getSetExclude(w http.ResponseWriter, r *http.Request) {
 }
 
 func getLogs(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	js, _ := json.Marshal(logEntries)
-	w.Write(js)
+	w.Header().Set("Content-Type", "text/plain")
+
+	text := ""
+	for _, log := range daulog.LogEntries {
+		text = text + fmt.Sprintf(
+			"%-6s %-19s %s\n", log.Type, log.Timestamp.Format("2006-01-02 15:04:05"), log.Entry,
+		)
+	}
+
+	//	js, _ := json.Marshal(daulog.LogEntries)
+	w.Write([]byte(text))
+
 }
 
 func StartWebServer() {
-	// wait for log entries
-	LogInput = make(chan LogEntry)
-	go func() {
-		for {
-			aLog := <-LogInput
-			logEntries = append(logEntries, aLog)
-		}
-	}()
 
 	http.HandleFunc("/", getStatic)
 	http.HandleFunc("/rest/config/webhook", getSetWebhook)

@@ -2,9 +2,12 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+
+	daulog "github.com/tardisx/discord-auto-upload/log"
 
 	"github.com/mitchellh/go-homedir"
 )
@@ -24,11 +27,11 @@ const CurrentVersion string = "0.8"
 // Load the current config or initialise with defaults
 func LoadOrInit() {
 	configPath := configPath()
-	log.Printf("Trying to load from %s\n", configPath)
+	daulog.SendLog(fmt.Sprintf("Trying to load config from %s", configPath), daulog.LogTypeDebug)
 	_, err := os.Stat(configPath)
 	if os.IsNotExist(err) {
-		log.Printf("NOTE: No config file, writing out sample configuration")
-		log.Printf("You need to set the configuration via the web interface")
+		daulog.SendLog("NOTE: No config file, writing out sample configuration", daulog.LogTypeInfo)
+		daulog.SendLog("You need to set the configuration via the web interface", daulog.LogTypeInfo)
 
 		Config.WebHookURL = ""
 		Config.Path = homeDir() + string(os.PathSeparator) + "screenshots"
@@ -52,7 +55,7 @@ func LoadConfig() {
 }
 
 func SaveConfig() {
-	log.Print("saving configuration")
+	daulog.SendLog("saving configuration", daulog.LogTypeInfo)
 	path := configPath()
 	jsonString, _ := json.Marshal(Config)
 	err := ioutil.WriteFile(path, jsonString, os.ModePerm)

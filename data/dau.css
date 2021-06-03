@@ -42,6 +42,10 @@ body {
   max-width: 42em;
 }
 
+pre {
+  background-color: black;
+  color: aliceblue;
+}
 
 /*
  * Header
