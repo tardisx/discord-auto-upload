@@ -78,10 +78,10 @@ func checkPath(path string) bool {
 func checkUpdates() {
 
 	type GithubRelease struct {
-		HTMLURL string
-		TagName string
-		Name    string
-		Body    string
+		HTMLURL string `json:"html_url"`
+		TagName string `json:"tag_name"`
+		Name    string `json:"name"`
+		Body    string `json:"body"`
 	}
 
 	daulog.SendLog("checking for new version", daulog.LogTypeInfo)
@@ -111,7 +111,7 @@ func checkUpdates() {
 		fmt.Println(latest.Body)
 		fmt.Println("------------------------------------")
 		fmt.Println("Upgrade at https://github.com/tardisx/discord-auto-upload/releases/latest")
-		daulog.SendLog(fmt.Sprintf("New version available: %s - download at https://github.com/tardisx/discord-auto-upload/releases/latest"), daulog.LogTypeInfo)
+		daulog.SendLog(fmt.Sprintf("New version available: %s - download at https://github.com/tardisx/discord-auto-upload/releases/latest", latest.TagName), daulog.LogTypeInfo)
 	}
 
 }
