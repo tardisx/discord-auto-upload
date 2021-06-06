@@ -5,3 +5,4 @@ discord-auto-upload.exe
 assets
 *.png
 *.jpg
+.DS_Store
