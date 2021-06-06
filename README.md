@@ -20,7 +20,7 @@ Binaries are available for Mac, Linux and Windows [here](https://github.com/tard
 
 #### From source
 
-You'll need to [download Go](https://golang.org/dl/) check the code out somewhere, run 'go generate' and then 'go build'.
+You'll need to [download Go](https://golang.org/dl/), check the code out somewhere, run 'go generate' and then 'go build'.
 
 ## Using it
 
