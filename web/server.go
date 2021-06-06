@@ -274,8 +274,17 @@ func getSetExclude(w http.ResponseWriter, r *http.Request) {
 func getLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
+	showDebug := false
+	debug, present := r.URL.Query()["debug"]
+	if present && len(debug[0]) > 0 && debug[0] != "0" {
+		showDebug = true
+	}
+
 	text := ""
 	for _, log := range daulog.LogEntries {
+		if !showDebug && log.Type == daulog.LogTypeDebug {
+			continue
+		}
 		text = text + fmt.Sprintf(
 			"%-6s %-19s %s\n", log.Type, log.Timestamp.Format("2006-01-02 15:04:05"), log.Entry,
 		)

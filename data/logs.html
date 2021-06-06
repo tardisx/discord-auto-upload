@@ -3,16 +3,51 @@
    <h1 class="DAU-heading">Config</h1>
    <p class="lead">Discord-auto-upload logs</p>
 
+   <div class="container">
+    <div class="row">
+      <div class="col-sm">
+        <button type="button" onClick="debug=1; get_logs();" class="btn btn-primary">all logs</button>
+      </div>
+      <div class="col-sm">
+        <button type="button" onClick="debug=0; get_logs();" class="btn btn-primary">no debug</button>
+      </div>
+      <div class="col-sm">
+        <button type="button" id="scroll-button" onClick="toggle_scroll();" class="btn btn-primary">disable auto-scroll</button>
+      </div>
+    </div>
+  </div>
+
   <pre id="logs" class="text-left pre-scrollable">
   </pre>
 </main>
 
 <script>
+var debug = 0;
+var scrl = true;
 $(document).ready(function() {
-    $.ajax({ method: 'get', url: '/rest/logs'})
-     .done(function(data) {
-       console.log(data);
-       $('#logs').text(data);
-      });
-    });
+  get_logs();
+  setInterval(function() { get_logs(); }, 1000);
+});
+
+function toggle_scroll() {
+  scrl = !scrl;
+  if (scrl) {
+    $('#scroll-button').text('disable auto-scroll');
+  }
+  else {
+    $('#scroll-button').text('auto-scroll');
+  }
+}
+
+function get_logs() {
+  $.ajax({ method: 'get', url: '/rest/logs', data: { debug : debug }})
+   .done(function(data) {
+     $('#logs').text(data);
+     console.log('scrl is ', scrl);
+     if (scrl) {
+       $('#logs').scrollTop(10000);
+     }
+  });
+}
+
 </script>
