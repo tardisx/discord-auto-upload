@@ -15,6 +15,7 @@ import (
 	"github.com/tardisx/discord-auto-upload/assets"
 	"github.com/tardisx/discord-auto-upload/config"
 	daulog "github.com/tardisx/discord-auto-upload/log"
+	"github.com/tardisx/discord-auto-upload/uploads"
 )
 
 // DAUWebServer - stuff for the web server
@@ -292,7 +293,13 @@ func getLogs(w http.ResponseWriter, r *http.Request) {
 
 	//	js, _ := json.Marshal(daulog.LogEntries)
 	w.Write([]byte(text))
+}
 
+func getUploads(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	ups := uploads.Uploads
+	text, _ := json.Marshal(ups)
+	w.Write([]byte(text))
 }
 
 func StartWebServer() {
@@ -306,6 +313,8 @@ func StartWebServer() {
 	http.HandleFunc("/rest/config/exclude", getSetExclude)
 
 	http.HandleFunc("/rest/logs", getLogs)
+	http.HandleFunc("/rest/uploads", getUploads)
+
 	go func() {
 		log.Print("Starting web server on http://localhost:9090")
 		err := http.ListenAndServe(":9090", nil) // set listen port
