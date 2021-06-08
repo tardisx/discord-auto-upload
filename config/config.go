@@ -22,7 +22,7 @@ var Config struct {
 	Exclude     string
 }
 
-const CurrentVersion string = "0.9"
+const CurrentVersion string = "0.10"
 
 // Load the current config or initialise with defaults
 func LoadOrInit() {
