@@ -1,0 +1,39 @@
+ <main role="main" class="inner DAU">
+   <h1 class="DAU-heading">Uploads</h1>
+   <p class="lead">Discord-auto-upload uploads</p>
+
+   <table class="table table-condensed table-dark">
+     <thead>
+       <tr><th>uploaded</th><th>dt</th><th>thumb</th></tr>
+      </thead>
+      <tbody id="uploads">
+
+      </tbody>
+   </table>
+</main>
+
+<script>
+
+$(document).ready(function() {
+  get_uploads();
+});
+
+function get_uploads() {
+  $.ajax({ method: 'get', url: '/rest/uploads'})
+   .done(function(data) {
+      console.log(data);
+      $('#uploads').empty();
+      if (! data) { return }
+      data.forEach(i => {
+      // {uploaded: true, uploaded_at: "2021-06-08T21:59:52.855936+09:30", url: "https://cdn.discordapp.com/attachments/849615269706203171/851800197046468628/dau736004285.png", width: 640, height: 640}
+        console.log(i);
+        row = $('<tr>');
+        row.append($('<td>').text(i.uploaded ? 'yes' : 'no'));
+        row.append($('<td>').text(i.uploaded_at));
+        row.append($('<td>').html($('<img>', { width : i.width/10, height : i.height/10, src : i.url })));
+        $('#uploads').prepend(row);
+      });
+    });
+}
+
+</script>
