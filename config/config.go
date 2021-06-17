@@ -10,6 +10,7 @@ import (
 	daulog "github.com/tardisx/discord-auto-upload/log"
 
 	"github.com/mitchellh/go-homedir"
+	"golang.org/x/mod/semver"
 )
 
 // Config for the application
@@ -22,7 +23,7 @@ var Config struct {
 	Exclude     string
 }
 
-const CurrentVersion string = "0.10"
+const CurrentVersion string = "v1.0.0"
 
 // Load the current config or initialise with defaults
 func LoadOrInit() {
@@ -75,4 +76,23 @@ func homeDir() string {
 func configPath() string {
 	homeDir := homeDir()
 	return homeDir + string(os.PathSeparator) + ".dau.json"
+}
+
+func NewVersionAvailable(v string) bool {
+	if !semver.IsValid(CurrentVersion) {
+		panic(fmt.Sprintf("my current version '%s' is not valid", CurrentVersion))
+	}
+	if !semver.IsValid(v) {
+		// maybe this should just be a warning
+		log.Printf("passed in version '%s' is not valid - assuming no new version", v)
+		return false
+	}
+	comp := semver.Compare(v, CurrentVersion)
+	if comp == 0 {
+		return false
+	}
+	if comp == -1 {
+		return true
+	}
+	return false // they are using a newer one than exists?
 }

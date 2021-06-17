@@ -8,4 +8,5 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pborman/getopt v1.1.0
 	golang.org/x/image v0.0.0-20210504121937-7319ad40d33e
+	golang.org/x/mod v0.4.2
 )

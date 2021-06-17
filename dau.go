@@ -99,7 +99,7 @@ func checkUpdates() {
 		log.Fatal("could not parse JSON: ", err)
 	}
 
-	if config.CurrentVersion < latest.TagName {
+	if config.NewVersionAvailable(latest.TagName) {
 		fmt.Printf("You are currently on version %s, but version %s is available\n", config.CurrentVersion, latest.TagName)
 		fmt.Println("----------- Release Info -----------")
 		fmt.Println(latest.Body)
@@ -107,6 +107,8 @@ func checkUpdates() {
 		fmt.Println("Upgrade at https://github.com/tardisx/discord-auto-upload/releases/latest")
 		daulog.SendLog(fmt.Sprintf("New version available: %s - download at https://github.com/tardisx/discord-auto-upload/releases/latest", latest.TagName), daulog.LogTypeInfo)
 	}
+
+	daulog.SendLog("already running latest version", daulog.LogTypeInfo)
 
 }
 

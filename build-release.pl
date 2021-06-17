@@ -7,11 +7,14 @@ open my $fh, "<", "config/config.go" || die $!;
 
 my $version;
 while (<$fh>) {
-  $version = $1 if /^const\s+CurrentVersion.*?"([\d\.]+)"/;
+  $version = $1 if /^const\s+CurrentVersion.*?"(v[\d\.]+)"/;
 }
 close $fh;
 
 die "no version?" unless defined $version;
+
+# quit if tests fail
+system("go test ./...") && die "not building release with failing tests";
 
 # so lazy
 system "rm", "-rf", "release", "dist";
