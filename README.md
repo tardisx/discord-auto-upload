@@ -88,7 +88,7 @@ Please check the "log" page on the web interface for information when things are
 not working as you expect.
 
 ## TODO
-This is just a relatively quick hack. Open to suggestions on new features and improvements.
 
-Open an [issue](https://github.com/tardisx/discord-auto-upload/issues/new) and let me know.
+Open an [issue](https://github.com/tardisx/discord-auto-upload/issues/new) and let me know what you'd like to see.
+
 Please include any relevant logs from the console when reporting bugs.
