@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
 	daulog "github.com/tardisx/discord-auto-upload/log"
@@ -13,7 +12,7 @@ import (
 )
 
 // Config for the application
-var Config struct {
+type ConfigV1 struct {
 	WebHookURL  string
 	Path        string
 	Watch       int
@@ -22,44 +21,64 @@ var Config struct {
 	Exclude     string
 }
 
-// Load the current config or initialise with defaults
-func LoadOrInit() {
-	configPath := configPath()
+type ConfigV2Watcher struct {
+	WebHookURL  string
+	Path        string
+	Username    string
+	NoWatermark bool
+	Exclude     string
+}
+
+type ConfigV2 struct {
+	WatchInterval int
+	Version       int
+	Watchers      []ConfigV2Watcher
+}
+
+var Config ConfigV2
+var configPath string
+
+func Init() {
+	configPath = defaultConfigPath()
+}
+
+// LoadOrInit loads the current configuration from the config file, or creates
+// a new config file if none exists.
+func LoadOrInit() error {
 	daulog.SendLog(fmt.Sprintf("Trying to load config from %s", configPath), daulog.LogTypeDebug)
 	_, err := os.Stat(configPath)
 	if os.IsNotExist(err) {
 		daulog.SendLog("NOTE: No config file, writing out sample configuration", daulog.LogTypeInfo)
 		daulog.SendLog("You need to set the configuration via the web interface", daulog.LogTypeInfo)
-
-		Config.WebHookURL = ""
-		Config.Path = homeDir() + string(os.PathSeparator) + "screenshots"
-		Config.Watch = 10
-		SaveConfig()
+		Config.Version = 2
+		Config.WatchInterval = 10
+		return SaveConfig()
 	} else {
-		LoadConfig()
+		return LoadConfig()
 	}
 }
 
-func LoadConfig() {
-	path := configPath()
-	data, err := ioutil.ReadFile(path)
+// LoadConfig will load the configuration from a known-to-exist config file.
+func LoadConfig() error {
+	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		log.Fatalf("cannot read config file %s: %s", path, err.Error())
+		return fmt.Errorf("cannot read config file %s: %s", configPath, err.Error())
 	}
 	err = json.Unmarshal([]byte(data), &Config)
 	if err != nil {
-		log.Fatalf("cannot decode config file %s: %s", path, err.Error())
+		return fmt.Errorf("cannot decode config file %s: %s", configPath, err.Error())
 	}
+	return nil
 }
 
-func SaveConfig() {
+func SaveConfig() error {
 	daulog.SendLog("saving configuration", daulog.LogTypeInfo)
-	path := configPath()
 	jsonString, _ := json.Marshal(Config)
-	err := ioutil.WriteFile(path, jsonString, os.ModePerm)
+	err := ioutil.WriteFile(configPath, jsonString, os.ModePerm)
 	if err != nil {
-		log.Fatalf("Cannot save config %s: %s", path, err.Error())
+		return fmt.Errorf("cannot save config %s: %s", configPath, err.Error())
 	}
+	return nil
 }
 
 func homeDir() string {
@@ -70,7 +89,7 @@ func homeDir() string {
 	return dir
 }
 
-func configPath() string {
+func defaultConfigPath() string {
 	homeDir := homeDir()
 	return homeDir + string(os.PathSeparator) + ".dau.json"
 }
