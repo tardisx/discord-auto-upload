@@ -56,7 +56,11 @@ func getStatic(w http.ResponseWriter, r *http.Request) {
 
 		t, err := template.ParseFS(webFS, "data/wrapper.tmpl", "data/"+path)
 		if err != nil {
-			panic(err)
+			log.Printf("when fetching: %s got: %s", path, err)
+			w.Header().Add("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("not found"))
+			return
 		}
 
 		log.Printf("req: %s", r.URL.Path)
@@ -78,7 +82,11 @@ func getStatic(w http.ResponseWriter, r *http.Request) {
 		otherStatic, err := webFS.ReadFile("data/" + path)
 
 		if err != nil {
-			log.Fatalf("problem with '%s': %v", path, err)
+			log.Printf("when fetching: %s got: %s", path, err)
+			w.Header().Add("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("not found"))
+			return
 		}
 		w.Header().Set("Content-Type", mime.TypeByExtension(extension))
 
