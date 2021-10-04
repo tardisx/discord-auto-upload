@@ -1,23 +1,26 @@
 package web
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
-	"text/template"
+	"strings"
 
-	"github.com/tardisx/discord-auto-upload/assets"
 	"github.com/tardisx/discord-auto-upload/config"
 	daulog "github.com/tardisx/discord-auto-upload/log"
 	"github.com/tardisx/discord-auto-upload/uploads"
 	"github.com/tardisx/discord-auto-upload/version"
 )
+
+//go:embed data
+var webFS embed.FS
 
 // DAUWebServer - stuff for the web server
 type DAUWebServer struct {
@@ -40,44 +43,49 @@ type errorResponse struct {
 }
 
 func getStatic(w http.ResponseWriter, r *http.Request) {
-	// haha this is dumb and I should change it
-	re := regexp.MustCompile(`[^a-zA-Z0-9\.]`)
-	path := r.URL.Path[1:]
-	sanitized_path := re.ReplaceAll([]byte(path), []byte("_"))
 
-	if string(sanitized_path) == "" {
-		sanitized_path = []byte("index.html")
+	path := r.URL.Path
+	path = strings.TrimLeft(path, "/")
+	if path == "" {
+		path = "index.html"
 	}
 
-	data, err := assets.Asset(string(sanitized_path))
-	if err != nil {
-		// Asset was not found.
-		fmt.Fprintln(w, err)
-	}
+	extension := filepath.Ext(string(path))
 
-	extension := filepath.Ext(string(sanitized_path))
-
-	// is this a HTML file? if so wrap it in the template
 	if extension == ".html" {
-		wrapper, _ := assets.Asset("wrapper.tmpl")
-		t := template.Must(template.New("wrapper").Parse(string(wrapper)))
+
+		t, err := template.ParseFS(webFS, "data/wrapper.tmpl", "data/"+path)
+		if err != nil {
+			panic(err)
+		}
+
+		log.Printf("req: %s", r.URL.Path)
+
 		var b struct {
 			Body    string
 			Path    string
 			Version string
 		}
-		b.Body = string(data)
-		b.Path = string(sanitized_path)
+		b.Path = path
 		b.Version = version.CurrentVersion
-		t.Execute(w, b)
+
+		err = t.ExecuteTemplate(w, "layout", b)
+		if err != nil {
+			panic(err)
+		}
+		return
+	} else {
+		otherStatic, err := webFS.ReadFile("data/" + path)
+
+		if err != nil {
+			log.Fatalf("problem with '%s': %v", path, err)
+		}
+		w.Header().Set("Content-Type", mime.TypeByExtension(extension))
+
+		w.Write(otherStatic)
 		return
 	}
 
-	// otherwise we are a static thing
-	w.Header().Set("Content-Type", mime.TypeByExtension(extension))
-
-	w.Write(data)
-	//
 }
 
 // TODO there should be locks around all these config accesses

@@ -1,3 +1,5 @@
+{{ define "layout" }}
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -46,7 +48,8 @@
    </div>
  </header>
 
-{{.Body}}
+{{ template "content" . }}
+
 
  <footer class="mastfoot mt-auto">
    <div class="inner">
@@ -57,4 +60,7 @@
 
 
 </body>
+    {{ template "js" . }}
 </html>
+
+{{ end }}

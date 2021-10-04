@@ -1,6 +1,6 @@
 module github.com/tardisx/discord-auto-upload
 
-go 1.15
+go 1.16
 
 require (
 	github.com/fogleman/gg v1.3.0

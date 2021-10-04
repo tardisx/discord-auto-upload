@@ -1,7 +1,5 @@
 package main
 
-//go:generate go-bindata -pkg assets -o assets/static.go -prefix data/ data
-
 import (
 	"encoding/json"
 	"fmt"

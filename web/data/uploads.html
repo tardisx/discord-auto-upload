@@ -1,3 +1,5 @@
+{{ define "content" }}
+
  <main role="main" class="inner DAU">
    <h1 class="DAU-heading">Uploads</h1>
    <p class="lead">Discord-auto-upload uploads</p>
@@ -12,6 +14,9 @@
    </table>
 </main>
 
+{{ end }}
+
+{{ define "js" }}
 <script>
 
 $(document).ready(function() {
@@ -37,3 +42,4 @@ function get_uploads() {
 }
 
 </script>
+{{ end }}

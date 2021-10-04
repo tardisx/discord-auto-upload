@@ -1,3 +1,4 @@
+{{ define "content" }}
 
  <main role="main" class="inner DAU">
    <h1 class="DAU-heading">Logs</h1>
@@ -20,6 +21,10 @@
   <pre id="logs" class="text-left pre-scrollable">
   </pre>
 </main>
+
+{{ end }}
+
+{{ define "js" }}
 
 <script>
 var debug = 0;
@@ -51,3 +56,6 @@ function get_logs() {
 }
 
 </script>
+
+
+{{ end }}

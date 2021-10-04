@@ -1,3 +1,4 @@
+{{ define "content" }}
 
  <main role="main" class="inner DAU">
    <h1 class="DAU-heading">Config</h1>
@@ -99,8 +100,9 @@
    </form>
 
  </main>
+{{ end }}
 
-
+{{ define "js" }}
 <script>
 function update_sadness () {
   if ($('#input-nowatermark').prop('checked')) {
@@ -154,3 +156,4 @@ $(document).ready(function() {
   });
 });
 </script>
+{{ end }}
