@@ -1,5 +1,7 @@
 # Automatically upload screenshots into a discord channel
 
+[![Go](https://github.com/tardisx/discord-auto-upload/actions/workflows/go.yml/badge.svg)](https://github.com/tardisx/discord-auto-upload/actions/workflows/go.yml)
+
 This program automatically uploads new screenshots that appear in a folder on your computer to Discord and posts them in a channel:
 
 ![Screenshot](http://i.imgur.com/QPS9V6f.jpg)
