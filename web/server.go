@@ -16,6 +16,7 @@ import (
 	"github.com/tardisx/discord-auto-upload/config"
 	daulog "github.com/tardisx/discord-auto-upload/log"
 	"github.com/tardisx/discord-auto-upload/uploads"
+	"github.com/tardisx/discord-auto-upload/version"
 )
 
 // DAUWebServer - stuff for the web server
@@ -67,7 +68,7 @@ func getStatic(w http.ResponseWriter, r *http.Request) {
 		}
 		b.Body = string(data)
 		b.Path = string(sanitized_path)
-		b.Version = config.CurrentVersion
+		b.Version = version.CurrentVersion
 		t.Execute(w, b)
 		return
 	}

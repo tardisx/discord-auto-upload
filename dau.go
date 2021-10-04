@@ -24,6 +24,7 @@ import (
 	"github.com/tardisx/discord-auto-upload/config"
 	daulog "github.com/tardisx/discord-auto-upload/log"
 	"github.com/tardisx/discord-auto-upload/uploads"
+	"github.com/tardisx/discord-auto-upload/version"
 	"github.com/tardisx/discord-auto-upload/web"
 )
 
@@ -99,8 +100,11 @@ func checkUpdates() {
 		log.Fatal("could not parse JSON: ", err)
 	}
 
-	if config.NewVersionAvailable(latest.TagName) {
-		fmt.Printf("You are currently on version %s, but version %s is available\n", config.CurrentVersion, latest.TagName)
+	// pre v0.11.0 version (ie before semver) did a simple string comparison,
+	// but since "0.10.0" < "v0.11.0" they should still get prompted to upgrade
+	// ok
+	if version.NewVersionAvailable(latest.TagName) {
+		fmt.Printf("You are currently on version %s, but version %s is available\n", version.CurrentVersion, latest.TagName)
 		fmt.Println("----------- Release Info -----------")
 		fmt.Println(latest.Body)
 		fmt.Println("------------------------------------")
@@ -128,7 +132,7 @@ func parseOptions() {
 
 	if *versionFlag {
 		fmt.Println("dau - https://github.com/tardisx/discord-auto-upload")
-		fmt.Printf("Version: %s\n", config.CurrentVersion)
+		fmt.Printf("Version: %s\n", version.CurrentVersion)
 		os.Exit(0)
 	}
 
