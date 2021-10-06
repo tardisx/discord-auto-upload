@@ -1,6 +1,6 @@
-// The uploads pacakge encapsulates dealing with file uploads to
-// discord
-package uploads
+// Package upload encapsulates prepping an image for sending to discord,
+// and actually uploading it there.
+package upload
 
 import (
 	"bytes"
@@ -22,48 +22,70 @@ import (
 	"golang.org/x/image/font/inconsolata"
 )
 
-type Upload struct {
-	Uploaded         bool      `json:"uploaded"` // has this file been uploaded to discord
-	UploadedAt       time.Time `json:"uploaded_at"`
-	originalFilename string    // path on the local disk
-	mungedFilename   string    // post-watermark
-	Url              string    `json:"url"` // url on the discord CDN
-	Width            int       `json:"width"`
-	Height           int       `json:"height"`
+type Uploader struct {
+	Uploads []*Upload
 }
 
-var Uploads []*Upload
+type Upload struct {
+	Uploaded   bool      `json:"uploaded"` // has this file been uploaded to discord
+	UploadedAt time.Time `json:"uploaded_at"`
 
-func AddFile(file string) {
+	originalFilename string // path on the local disk
+	filenameToUpload string // post-watermark, or just original if unwatermarked
+
+	webhookURL string
+
+	watermark bool // should watermark
+
+	usernameOverride string
+
+	Url string `json:"url"` // url on the discord CDN
+
+	Width  int `json:"width"`
+	Height int `json:"height"`
+}
+
+func (u *Uploader) AddFile(file string, conf config.Watcher) {
 	thisUpload := Upload{
 		Uploaded:         false,
 		originalFilename: file,
+		watermark:        !conf.NoWatermark,
+		webhookURL:       conf.WebHookURL,
+		usernameOverride: conf.Username,
 	}
-	Uploads = append(Uploads, &thisUpload)
-
-	ProcessUpload(&thisUpload)
+	u.Uploads = append(u.Uploads, &thisUpload)
 }
 
-func ProcessUpload(up *Upload) {
-
-	file := up.originalFilename
-
-	if !config.Config.NoWatermark {
-		daulog.SendLog("Copying to temp location and watermarking ", daulog.LogTypeInfo)
-		file = mungeFile(file)
-		up.mungedFilename = file
+// Upload uploads any files that have not yet been uploaded
+func (u *Uploader) Upload() {
+	for _, upload := range u.Uploads {
+		if !upload.Uploaded {
+			upload.processUpload()
+		}
 	}
+}
 
-	if config.Config.WebHookURL == "" {
+func (u *Upload) processUpload() {
+
+	// file := u.originalFilename
+
+	if u.webhookURL == "" {
 		daulog.SendLog("WebHookURL is not configured - cannot upload!", daulog.LogTypeError)
 		return
 	}
 
+	if u.watermark {
+		daulog.SendLog("Watermarking", daulog.LogTypeInfo)
+		u.applyWatermark()
+	} else {
+		u.filenameToUpload = u.originalFilename
+	}
+
 	extraParams := map[string]string{}
 
-	if config.Config.Username != "" {
-		daulog.SendLog("Overriding username with "+config.Config.Username, daulog.LogTypeInfo)
-		extraParams["username"] = config.Config.Username
+	if u.usernameOverride != "" {
+		daulog.SendLog("Overriding username with "+u.usernameOverride, daulog.LogTypeInfo)
+		extraParams["username"] = u.usernameOverride
 	}
 
 	type DiscordAPIResponseAttachment struct {
@@ -83,7 +105,7 @@ func ProcessUpload(up *Upload) {
 	var retriesRemaining = 5
 	for retriesRemaining > 0 {
 
-		request, err := newfileUploadRequest(config.Config.WebHookURL, extraParams, "file", file)
+		request, err := newfileUploadRequest(u.webhookURL, extraParams, "file", u.filenameToUpload)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -145,19 +167,19 @@ func ProcessUpload(up *Upload) {
 			daulog.SendLog(fmt.Sprintf("Uploaded to %s %dx%d", a.URL, a.Width, a.Height), daulog.LogTypeInfo)
 			daulog.SendLog(fmt.Sprintf("id: %d, %d bytes transferred in %.2f seconds (%.2f KiB/s)", res.ID, a.Size, elapsed.Seconds(), rate), daulog.LogTypeInfo)
 
-			up.Url = a.URL
-			up.Uploaded = true
-			up.Width = a.Width
-			up.Height = a.Height
-			up.UploadedAt = time.Now()
+			u.Url = a.URL
+			u.Uploaded = true
+			u.Width = a.Width
+			u.Height = a.Height
+			u.UploadedAt = time.Now()
 
 			break
 		}
 	}
 
-	if !config.Config.NoWatermark {
-		daulog.SendLog(fmt.Sprintf("Removing temporary file: %s", file), daulog.LogTypeDebug)
-		os.Remove(file)
+	if u.watermark {
+		daulog.SendLog(fmt.Sprintf("Removing temporary file: %s", u.filenameToUpload), daulog.LogTypeDebug)
+		os.Remove(u.filenameToUpload)
 	}
 
 	if retriesRemaining == 0 {
@@ -196,9 +218,9 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 	return req, err
 }
 
-func mungeFile(path string) string {
+func (u *Upload) applyWatermark() {
 
-	reader, err := os.Open(path)
+	reader, err := os.Open(u.originalFilename)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -206,7 +228,10 @@ func mungeFile(path string) string {
 
 	im, _, err := image.Decode(reader)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Cannot decode image: %v - skipping watermarking", err)
+		u.watermark = false
+		u.filenameToUpload = u.originalFilename
+		return
 	}
 	bounds := im.Bounds()
 	// var S float64 = float64(bounds.Max.X)
@@ -236,7 +261,7 @@ func mungeFile(path string) string {
 	actualName := tempfile.Name() + ".png"
 
 	dc.SavePNG(actualName)
-	return actualName
+	u.filenameToUpload = actualName
 }
 
 func sleepForRetries(retry int) {

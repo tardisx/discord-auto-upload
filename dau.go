@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,57 +17,130 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
-	"github.com/pborman/getopt"
-
 	// "github.com/skratchdot/open-golang/open"
 
 	"github.com/tardisx/discord-auto-upload/config"
 	daulog "github.com/tardisx/discord-auto-upload/log"
-	"github.com/tardisx/discord-auto-upload/uploads"
+	"github.com/tardisx/discord-auto-upload/upload"
+
+	// "github.com/tardisx/discord-auto-upload/upload"
 	"github.com/tardisx/discord-auto-upload/version"
 	"github.com/tardisx/discord-auto-upload/web"
 )
 
-var lastCheck = time.Now()
-var newLastCheck = time.Now()
+type watch struct {
+	lastCheck    time.Time
+	newLastCheck time.Time
+	config       config.Watcher
+	uploader     upload.Uploader
+}
 
 func main() {
 
 	parseOptions()
 
+	// grab the config
+	config := config.DefaultConfigService()
+	config.LoadOrInit()
+
+	// create the uploader
+	up := upload.Uploader{}
+
 	// log.Print("Opening web browser")
 	// open.Start("http://localhost:9090")
+	web := web.WebService{Config: *config}
 	web.StartWebServer()
 
-	checkUpdates()
+	go func() { checkUpdates() }()
 
-	daulog.SendLog(fmt.Sprintf("Waiting for images to appear in %s", config.Config.Path), daulog.LogTypeInfo)
-	// wander the path, forever
+	// create the watchers
+
+	log.Printf("Conf: %#v", config.Config)
+
+	for _, c := range config.Config.Watchers {
+		log.Printf("Creating watcher for %v", c)
+		watcher := watch{uploader: up, lastCheck: time.Now(), newLastCheck: time.Now(), config: c}
+		go watcher.Watch(config.Config.WatchInterval)
+	}
+
+	select {}
+}
+
+func (w *watch) Watch(interval int) {
 	for {
-		if checkPath(config.Config.Path) {
-			err := filepath.Walk(config.Config.Path,
-				func(path string, f os.FileInfo, err error) error { return checkFile(path, f, err) })
-			if err != nil {
-				log.Fatal("could not watch path", err)
-			}
-			lastCheck = newLastCheck
+		newFiles := w.ProcessNewFiles()
+		for _, f := range newFiles {
+			w.uploader.AddFile(f, w.config)
 		}
-		daulog.SendLog(fmt.Sprintf("sleeping for %ds before next check of %s", config.Config.Watch, config.Config.Path), daulog.LogTypeDebug)
-		time.Sleep(time.Duration(config.Config.Watch) * time.Second)
+		// upload them
+		w.uploader.Upload()
+		daulog.SendLog(fmt.Sprintf("sleeping for %ds before next check of %s", interval, w.config.Path), daulog.LogTypeDebug)
+		time.Sleep(time.Duration(interval) * time.Second)
 	}
 }
 
-func checkPath(path string) bool {
-	src, err := os.Stat(path)
+// ProcessNewFiles returns an array of new files that have appeared since
+// the last time ProcessNewFiles was run.
+func (w *watch) ProcessNewFiles() []string {
+	var newFiles []string
+	// check the path each time around, in case it goes away or something
+	if w.checkPath() {
+		// walk the path
+		err := filepath.WalkDir(w.config.Path,
+			func(path string, d fs.DirEntry, err error) error {
+				return w.checkFile(path, &newFiles)
+			})
+
+		if err != nil {
+			log.Fatal("could not watch path", err)
+		}
+		w.lastCheck = w.newLastCheck
+	}
+	return newFiles
+}
+
+// checkPath makes sure the path exists, and is a directory.
+// It logs errors if there are problems, and returns false
+func (w *watch) checkPath() bool {
+	src, err := os.Stat(w.config.Path)
 	if err != nil {
-		log.Printf("Problem with path '%s': %s", path, err)
+		log.Printf("Problem with path '%s': %s", w.config.Path, err)
 		return false
 	}
 	if !src.IsDir() {
-		log.Printf("Problem with path '%s': is not a directory", path)
+		log.Printf("Problem with path '%s': is not a directory", w.config.Path)
 		return false
 	}
 	return true
+}
+
+// checkFile checks if a file is eligible, first looking at extension (to
+// avoid statting files uselessly) then modification times.
+// If the file is eligble, and new enough to care we add it to the passed in
+// array of files
+func (w *watch) checkFile(path string, found *[]string) error {
+	log.Printf("Considering %s", path)
+
+	extension := strings.ToLower(filepath.Ext(path))
+
+	if !(extension == ".png" || extension == ".jpg" || extension == ".gif") {
+		return nil
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+
+	if fi.ModTime().After(w.lastCheck) && fi.Mode().IsRegular() {
+		*found = append(*found, path)
+	}
+
+	if w.newLastCheck.Before(fi.ModTime()) {
+		w.newLastCheck = fi.ModTime()
+	}
+
+	return nil
 }
 
 func checkUpdates() {
@@ -115,61 +190,14 @@ func checkUpdates() {
 }
 
 func parseOptions() {
+	var versionFlag bool
+	flag.BoolVar(&versionFlag, "version", false, "show version")
+	flag.Parse()
 
-	// Declare the flags to be used
-	helpFlag := getopt.BoolLong("help", 'h', "help")
-	versionFlag := getopt.BoolLong("version", 'v', "show version")
-	getopt.SetParameters("")
-
-	getopt.Parse()
-
-	if *helpFlag {
-		getopt.PrintUsage(os.Stderr)
-		os.Exit(0)
-	}
-
-	if *versionFlag {
+	if versionFlag {
 		fmt.Println("dau - https://github.com/tardisx/discord-auto-upload")
 		fmt.Printf("Version: %s\n", version.CurrentVersion)
 		os.Exit(0)
 	}
 
-	// grab the config
-	config.LoadOrInit()
-}
-
-func checkFile(path string, f os.FileInfo, err error) error {
-	if f.ModTime().After(lastCheck) && f.Mode().IsRegular() {
-
-		if fileEligible(path) {
-			// process file
-			processFile(path)
-		}
-
-		if newLastCheck.Before(f.ModTime()) {
-			newLastCheck = f.ModTime()
-		}
-	}
-
-	return nil
-}
-
-func fileEligible(file string) bool {
-
-	if config.Config.Exclude != "" && strings.Contains(file, config.Config.Exclude) {
-		return false
-	}
-
-	extension := strings.ToLower(filepath.Ext(file))
-	if extension == ".png" || extension == ".jpg" || extension == ".gif" {
-		return true
-	}
-
-	return false
-}
-
-func processFile(file string) {
-
-	daulog.SendLog("Sending to uploader", daulog.LogTypeInfo)
-	uploads.AddFile(file)
 }

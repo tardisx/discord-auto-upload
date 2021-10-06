@@ -5,44 +5,32 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"mime"
 	"net/http"
-	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/tardisx/discord-auto-upload/config"
 	daulog "github.com/tardisx/discord-auto-upload/log"
-	"github.com/tardisx/discord-auto-upload/uploads"
 	"github.com/tardisx/discord-auto-upload/version"
 )
+
+type WebService struct {
+	Config config.ConfigService
+}
 
 //go:embed data
 var webFS embed.FS
 
 // DAUWebServer - stuff for the web server
 type DAUWebServer struct {
-	ConfigChange chan int
+	//	ConfigChange chan int
+
 }
 
-type valueStringResponse struct {
-	Success bool   `json:"success"`
-	Value   string `json:"value"`
-}
-
-type valueBooleanResponse struct {
-	Success bool `json:"success"`
-	Value   bool `json:"value"`
-}
-
-type errorResponse struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error"`
-}
-
-func getStatic(w http.ResponseWriter, r *http.Request) {
+func (ws *WebService) getStatic(w http.ResponseWriter, r *http.Request) {
 
 	path := r.URL.Path
 	path = strings.TrimLeft(path, "/")
@@ -52,8 +40,7 @@ func getStatic(w http.ResponseWriter, r *http.Request) {
 
 	extension := filepath.Ext(string(path))
 
-	if extension == ".html" {
-
+	if extension == ".html" { // html file
 		t, err := template.ParseFS(webFS, "data/wrapper.tmpl", "data/"+path)
 		if err != nil {
 			log.Printf("when fetching: %s got: %s", path, err)
@@ -78,7 +65,7 @@ func getStatic(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 		return
-	} else {
+	} else { // anything else
 		otherStatic, err := webFS.ReadFile("data/" + path)
 
 		if err != nil {
@@ -96,200 +83,7 @@ func getStatic(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// TODO there should be locks around all these config accesses
-func getSetWebhook(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method == "GET" {
-		getResponse := valueStringResponse{Success: true, Value: config.Config.WebHookURL}
-
-		// I can't see any way this will fail
-		js, _ := json.Marshal(getResponse)
-		w.Write(js)
-	} else if r.Method == "POST" {
-		err := r.ParseForm()
-		if err != nil {
-			log.Fatal(err)
-		}
-		config.Config.WebHookURL = r.PostForm.Get("value")
-		config.SaveConfig()
-		postResponse := valueStringResponse{Success: true, Value: config.Config.WebHookURL}
-
-		js, _ := json.Marshal(postResponse)
-		w.Write(js)
-	}
-}
-
-// TODO there should be locks around all these config accesses
-func getSetUsername(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method == "GET" {
-		getResponse := valueStringResponse{Success: true, Value: config.Config.Username}
-
-		// I can't see any way this will fail
-		js, _ := json.Marshal(getResponse)
-		w.Write(js)
-	} else if r.Method == "POST" {
-		err := r.ParseForm()
-		if err != nil {
-			log.Fatal(err)
-		}
-		config.Config.Username = r.PostForm.Get("value")
-		config.SaveConfig()
-
-		postResponse := valueStringResponse{Success: true, Value: config.Config.Username}
-
-		js, _ := json.Marshal(postResponse)
-		w.Write(js)
-	}
-}
-
-func getSetWatch(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method == "GET" {
-		getResponse := valueStringResponse{Success: true, Value: strconv.Itoa(config.Config.Watch)}
-
-		// I can't see any way this will fail
-		js, _ := json.Marshal(getResponse)
-		w.Write(js)
-	} else if r.Method == "POST" {
-		err := r.ParseForm()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		i, err := strconv.Atoi(r.PostForm.Get("value"))
-
-		if err != nil {
-			response := errorResponse{Success: false, Error: fmt.Sprintf("Bad value for watch: %v", err)}
-			js, _ := json.Marshal(response)
-			w.Write(js)
-			return
-		}
-
-		if i < 1 {
-			response := errorResponse{Success: false, Error: "must be > 0"}
-			js, _ := json.Marshal(response)
-			w.Write(js)
-			return
-		}
-
-		config.Config.Watch = i
-		config.SaveConfig()
-
-		postResponse := valueStringResponse{Success: true, Value: strconv.Itoa(config.Config.Watch)}
-
-		js, _ := json.Marshal(postResponse)
-		w.Write(js)
-	}
-}
-
-func getSetNoWatermark(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method == "GET" {
-		getResponse := valueBooleanResponse{Success: true, Value: config.Config.NoWatermark}
-
-		// I can't see any way this will fail
-		js, _ := json.Marshal(getResponse)
-		w.Write(js)
-	} else if r.Method == "POST" {
-		err := r.ParseForm()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		v := r.PostForm.Get("value")
-
-		if v != "0" && v != "1" {
-			response := errorResponse{Success: false, Error: fmt.Sprintf("Bad value for nowatermark: %v", err)}
-			js, _ := json.Marshal(response)
-			w.Write(js)
-			return
-		}
-
-		if v == "0" {
-			config.Config.NoWatermark = false
-		} else {
-			config.Config.NoWatermark = true
-		}
-		config.SaveConfig()
-
-		postResponse := valueBooleanResponse{Success: true, Value: config.Config.NoWatermark}
-
-		js, _ := json.Marshal(postResponse)
-		w.Write(js)
-	}
-}
-
-func getSetDirectory(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method == "GET" {
-		getResponse := valueStringResponse{Success: true, Value: config.Config.Path}
-
-		// I can't see any way this will fail
-		js, _ := json.Marshal(getResponse)
-		w.Write(js)
-	} else if r.Method == "POST" {
-		err := r.ParseForm()
-		if err != nil {
-			log.Fatal(err)
-		}
-		newPath := r.PostForm.Get("value")
-
-		// sanity check this path
-		stat, err := os.Stat(newPath)
-		if os.IsNotExist(err) {
-			// not exist
-			response := errorResponse{Success: false, Error: fmt.Sprintf("Path: %s - does not exist", newPath)}
-			js, _ := json.Marshal(response)
-			w.Write(js)
-			return
-		} else if !stat.IsDir() {
-			// not a directory
-			response := errorResponse{Success: false, Error: fmt.Sprintf("Path: %s - is not a directory", newPath)}
-			js, _ := json.Marshal(response)
-			w.Write(js)
-			return
-		}
-
-		config.Config.Path = newPath
-		config.SaveConfig()
-
-		postResponse := valueStringResponse{Success: true, Value: config.Config.Path}
-
-		js, _ := json.Marshal(postResponse)
-		w.Write(js)
-	}
-}
-
-func getSetExclude(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method == "GET" {
-		getResponse := valueStringResponse{Success: true, Value: config.Config.Exclude}
-		// I can't see any way this will fail
-		js, _ := json.Marshal(getResponse)
-		w.Write(js)
-	} else if r.Method == "POST" {
-		err := r.ParseForm()
-		if err != nil {
-			log.Fatal(err)
-		}
-		config.Config.Exclude = r.PostForm.Get("value")
-		config.SaveConfig()
-
-		postResponse := valueStringResponse{Success: true, Value: config.Config.Exclude}
-
-		js, _ := json.Marshal(postResponse)
-		w.Write(js)
-	}
-}
-
-func getLogs(w http.ResponseWriter, r *http.Request) {
+func (ws *WebService) getLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
 	showDebug := false
@@ -312,29 +106,50 @@ func getLogs(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(text))
 }
 
-func getUploads(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	ups := uploads.Uploads
-	text, _ := json.Marshal(ups)
-	w.Write([]byte(text))
+func (ws *WebService) handleConfig(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		newConfig := config.ConfigV2{}
+
+		defer r.Body.Close()
+		b, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.Write([]byte("bad body"))
+			return
+		}
+		err = json.Unmarshal(b, &newConfig)
+		if err != nil {
+			w.Write([]byte("bad data"))
+			log.Printf("%s", err)
+			return
+		}
+		ws.Config.Config = newConfig
+		ws.Config.Save()
+
+	}
+
+	b, _ := json.Marshal(ws.Config.Config)
+	w.Write(b)
 }
 
-func StartWebServer() {
+// func getUploads(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Content-Type", "application/json")
+// 	ups := uploads.Uploads
+// 	text, _ := json.Marshal(ups)
+// 	w.Write([]byte(text))
+// }
 
-	http.HandleFunc("/", getStatic)
-	http.HandleFunc("/rest/config/webhook", getSetWebhook)
-	http.HandleFunc("/rest/config/username", getSetUsername)
-	http.HandleFunc("/rest/config/watch", getSetWatch)
-	http.HandleFunc("/rest/config/nowatermark", getSetNoWatermark)
-	http.HandleFunc("/rest/config/directory", getSetDirectory)
-	http.HandleFunc("/rest/config/exclude", getSetExclude)
+func (ws *WebService) StartWebServer() {
 
-	http.HandleFunc("/rest/logs", getLogs)
-	http.HandleFunc("/rest/uploads", getUploads)
+	http.HandleFunc("/", ws.getStatic)
+
+	http.HandleFunc("/rest/logs", ws.getLogs)
+	// http.HandleFunc("/rest/uploads", getUploads)
+	http.HandleFunc("/rest/config", ws.handleConfig)
 
 	go func() {
-		log.Print("Starting web server on http://localhost:9090")
-		err := http.ListenAndServe(":9090", nil) // set listen port
+		listen := fmt.Sprintf(":%d", ws.Config.Config.Port)
+		log.Print("Starting web server on http://localhost%s", listen)
+		err := http.ListenAndServe(listen, nil) // set listen port
 		if err != nil {
 			log.Fatal("ListenAndServe: ", err)
 		}

@@ -7,39 +7,76 @@ import (
 )
 
 func TestNoConfig(t *testing.T) {
-	if Config.Version != 0 {
-		t.Error("not 0 empty config")
-	}
+	c := ConfigService{}
 
-	configPath = emptyTempFile()
-	os.Remove(configPath)
+	c.ConfigFilename = emptyTempFile()
+	os.Remove(c.ConfigFilename)
+	defer os.Remove(c.ConfigFilename) // because we are about to create it
 
-	err := LoadOrInit()
+	err := c.LoadOrInit()
 	if err != nil {
 		t.Errorf("unexpected failure from load: %s", err)
 	}
 
-	if Config.Version != 2 {
+	if c.Config.Version != 2 {
 		t.Error("not version 2 starting config")
 	}
 
-	if fileSize(configPath) < 40 {
-		t.Errorf("File is too small %d bytes", fileSize(configPath))
+	if fileSize(c.ConfigFilename) < 40 {
+		t.Errorf("File is too small %d bytes", fileSize(c.ConfigFilename))
 	}
 
-	os.Remove(configPath)
 }
 
 func TestEmptyFileConfig(t *testing.T) {
+	c := ConfigService{}
 
-	configPath = emptyTempFile()
+	c.ConfigFilename = emptyTempFile()
+	defer os.Remove(c.ConfigFilename)
 
-	err := LoadOrInit()
+	err := c.LoadOrInit()
 	if err == nil {
 		t.Error("unexpected success from LoadOrInit()")
 	}
 
-	os.Remove(configPath)
+}
+
+func TestMigrateFromV1toV2(t *testing.T) {
+	c := ConfigService{}
+
+	c.ConfigFilename = v1Config()
+	err := c.LoadOrInit()
+	if err != nil {
+		t.Error("unexpected error from LoadOrInit()")
+	}
+	if c.Config.Version != 2 {
+		t.Errorf("Version %d not 2", c.Config.Version)
+	}
+
+	if len(c.Config.Watchers) != 1 {
+		t.Error("wrong amount of watchers")
+	}
+
+	if c.Config.Watchers[0].Path != "/private/tmp" {
+		t.Error("Wrong path")
+	}
+	if c.Config.WatchInterval != 69 {
+		t.Error("Wrong watch interval")
+	}
+	if c.Config.Port != 9090 {
+		t.Error("Wrong port")
+	}
+}
+
+func v1Config() string {
+	f, err := ioutil.TempFile("", "dautest-*")
+	if err != nil {
+		panic(err)
+	}
+	config := `{"WebHookURL":"https://discord.com/api/webhooks/abc123","Path":"/private/tmp","Watch":69,"Username":"abcdedf","NoWatermark":true,"Exclude":"ab cd ef"}`
+	f.Write([]byte(config))
+	defer f.Close()
+	return f.Name()
 }
 
 func emptyTempFile() string {

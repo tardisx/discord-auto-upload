@@ -1,6 +1,7 @@
 package log
 
 import (
+	"log"
 	"time"
 )
 
@@ -42,4 +43,5 @@ func SendLog(entry string, entryType LogEntryType) {
 		Entry:     entry,
 		Type:      entryType,
 	}
+	log.Printf(entry)
 }

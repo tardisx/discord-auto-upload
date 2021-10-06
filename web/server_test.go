@@ -6,15 +6,19 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/tardisx/discord-auto-upload/config"
 )
 
 func TestHome(t *testing.T) {
+	s := WebService{}
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
-	getStatic(w, req)
+	s.getStatic(w, req)
 	res := w.Result()
-	defer res.Body.Close()
+
 	data, err := ioutil.ReadAll(res.Body)
+
 	if err != nil {
 		t.Errorf("expected error to be nil got %v", err)
 	}
@@ -28,6 +32,7 @@ func TestHome(t *testing.T) {
 }
 
 func TestNotFound(t *testing.T) {
+	s := WebService{}
 
 	notFounds := []string{
 		"/abc.html", "/foo.html", "/foo.html", "/../foo.html",
@@ -38,8 +43,9 @@ func TestNotFound(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodGet, nf, nil)
 		w := httptest.NewRecorder()
-		getStatic(w, req)
+		s.getStatic(w, req)
 		res := w.Result()
+
 		defer res.Body.Close()
 		b, err := ioutil.ReadAll(res.Body)
 		if err != nil {
@@ -52,5 +58,27 @@ func TestNotFound(t *testing.T) {
 			t.Error("Wrong content type for not found")
 
 		}
+	}
+}
+
+func TestGetConfig(t *testing.T) {
+	conf := config.DefaultConfigService()
+	conf.Config = *config.DefaultConfig()
+	s := WebService{Config: *conf}
+
+	req := httptest.NewRequest(http.MethodGet, "/rest/config", nil)
+	w := httptest.NewRecorder()
+	s.handleConfig(w, req)
+	res := w.Result()
+	defer res.Body.Close()
+
+	b, err := ioutil.ReadAll(res.Body)
+
+	if err != nil {
+		t.Errorf("expected error to be nil got %v", err)
+	}
+
+	if string(b) != `{"WatchInterval":10,"Version":2,"Watchers":[{"WebHookURL":"abcedf","Path":"/Users/justin/tmp","Username":"","NoWatermark":false,"Exclude":[]}]}` {
+		t.Errorf("Got unexpected response %v", string(b))
 	}
 }

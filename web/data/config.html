@@ -1,159 +1,153 @@
 {{ define "content" }}
 
- <main role="main" class="inner DAU">
-   <h1 class="DAU-heading">Config</h1>
-   <p class="lead">Discord-auto-upload configuration</p>
-   <a href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks"><p class="lead">How to find your discord webhook</p></a>
+<main role="main" class="inner DAU" x-data="configuration()" x-init="get_config()">
+  <h1 class="DAU-heading">Config</h1>
+
+  </a>
+
+  <form class="">
+
+    <p>Configuration changes are not made until the Save button is pressed
+      at the bottom of this page.
+    </p>
+
+    <h3>global configuration</h3>
+
+    <p>The server port dictates which TCP port the web server listens on.
+      If you change this number you will need to restart.
+    </p>
+
+    <p>The Watch Interval is how often new files will be discovered by your
+      watchers (configured below).</p>
+
+    <div class="form-row align-items-center">
+      <div class="col-sm-6 my-1">
+        <span>Server port</span>
+      </div>
+      <div class="col-sm-6 my-1">
+        <label class="sr-only">Server port</label>
+        <input type="text" class="form-control" placeholder="" x-model.number="config.Port">
+      </div>
+    </div>
+
+    <div class="form-row align-items-center">
+      <div class="col-sm-6 my-1">
+        <span>Watch interval</span>
+      </div>
+      <div class="col-sm-6 my-1">
+        <label class="sr-only">Watch interval</label>
+        <input type="text" class="form-control" placeholder="" x-model.number="config.WatchInterval">
+      </div>
+    </div>
 
 
-   <form class="">
-     <div class="form-row align-items-center config-item" data-key="webhook">
-       <div class="col-sm-5 my-1">
-         <span>Discord WebHook URL</span>
-       </div>
-       <div class="col-sm-4 my-1">
-         <label class="sr-only" for="inlineFormInputName">Name</label>
-         <input type="text" class="form-control rest-field" placeholder="https://....">
-       </div>
-       <div class="col-auto my-1">
-         <button type="submit" class="btn btn-primary">update</button>
-       </div>
-     </div>
-   </form>
+    <h3>watcher configuration</h3>
 
-   <form class="">
-     <div class="form-row align-items-center config-item" data-key="username">
-       <div class="col-sm-5 my-1">
-         <span>Bot username (optional)</span>
-       </div>
-       <div class="col-sm-4 my-1">
-         <label class="sr-only" for="inlineFormInputName">Name</label>
-         <input type="text" class="form-control rest-field" placeholder="">
-       </div>
-       <div class="col-auto my-1">
-         <button type="submit" class="btn btn-primary">update</button>
-       </div>
-     </div>
-   </form>
+    <p>You may configure one or more watchers. Each watcher watches a
+      single directory (and all subdirectories) and when a new image file
+      is found it uploads it to the specified channel via the webhook URL.
+    </p>
 
-   <form class="">
-     <div class="form-row align-items-center config-item" data-key="directory">
-       <div class="col-sm-5 my-1">
-         <span>Directory to watch</span>
-       </div>
-       <div class="col-sm-4 my-1">
-         <label class="sr-only" for="inlineFormInputName">Name</label>
-         <input type="text" class="form-control rest-field" placeholder="/...">
-       </div>
-       <div class="col-auto my-1">
-         <button type="submit" class="btn btn-primary">update</button>
-       </div>
-     </div>
-   </form>
+    <p><a href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks">
+        Click here</a> for information on how to find your discord webhook URL.</p>
 
-   <form class="">
-     <div class="form-row align-items-center config-item" data-key="watch">
-       <div class="col-sm-5 my-1">
-         <span>Period between filesystem checks (seconds)</span>
-       </div>
-       <div class="col-sm-4 my-1">
-         <label class="sr-only" for="inlineFormInputName">Seconds</label>
-         <input type="text" class="form-control rest-field " placeholder="/...">
-       </div>
-       <div class="col-auto my-1">
-         <button type="submit" class="btn btn-primary">update</button>
-       </div>
-     </div>
-   </form>
+    <p>You may also specify a username for the bot to masquerade as. This is a cosmetic
+      change only, and does not hide the uploaders actual identity.
+    </p>
 
-   <form class="">
-     <div class="form-row align-items-center config-item" data-key="nowatermark">
-       <div class="col-sm-5 my-1">
-         <span>Do not watermark images</span>
-       </div>
-       <div class="col-sm-4 my-1">
-         <div class="custom-control custom-switch">
-           <input type="checkbox" class="custom-control-input rest-field rest-field-boolean" id="input-nowatermark">
-           <label class="custom-control-label" for="input-nowatermark">&nbsp;</label>
-           <span id="sadness" style="">😭</span>
-         </div>
-       </div>
-       <div class="col-auto my-1">
-         <button type="submit" class="btn btn-primary">update</button>
-       </div>
-     </div>
-   </form>
+    <template x-for="(watcher, i) in config.Watchers">
+      <div class="my-5">
+        <div class="form-row align-items-center">
+          <div class="col-sm-6 my-1">
+            <span>Directory to watch</span>
+          </div>
+          <div class="col-sm-6 my-1">
+            <label class="sr-only" for="">Directory</label>
+            <input type="text" class="form-control" placeholder="" x-model="watcher.Path">
+          </div>
+        </div>
 
-   <form class="">
-     <div class="form-row align-items-center config-item" data-key="exclude">
-       <div class="col-sm-5 my-1">
-         <span>Files to exclude</span>
-       </div>
-       <div class="col-sm-4 my-1">
-         <label class="sr-only" for="input-exclude">Name</label>
-         <input type="text" id="input-exclude" class="form-control rest-field" placeholder="">
-       </div>
-       <div class="col-auto my-1">
-         <button type="submit" class="btn btn-primary">update</button>
-       </div>
-     </div>
-   </form>
+        <div class="form-row align-items-center">
+          <div class="col-sm-6 my-1">
+            <span>Webhook URL</span>
+          </div>
+          <div class="col-sm-6 my-1">
+            <label class="sr-only" for="">WebHook URL</label>
+            <input type="text" class="form-control" placeholder="" x-model="watcher.WebHookURL">
+          </div>
+        </div>
 
- </main>
+        <div class="form-row align-items-center">
+          <div class="col-sm-6 my-1">
+            <span>Username</span>
+          </div>
+          <div class="col-sm-6 my-1">
+            <label class="sr-only" for="">Username</label>
+            <input type="text" class="form-control" placeholder="" x-model="watcher.Username">
+          </div>
+        </div>
+
+        <div class="form-row align-items-center">
+          <div class="col-sm-6 my-1">
+            <span>Watermark</span>
+          </div>
+          <div class="col-sm-6 my-1">
+            <button type="button" @click="config.Watchers[i].NoWatermark = ! config.Watchers[i].NoWatermark" class="btn btn-success" x-text="watcher.NoWatermark ? 'Disabled 😢' : 'Enabled'"></button>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" href="#" @click.prevent="config.Watchers.splice(i, 1);">Remove
+          this watcher</button>
+
+      </div>
+
+    </template>
+
+    <div class="my-5">
+      <button type="button" class="btn btn-secondary" href="#"
+        @click.prevent="config.Watchers.push({Username: '', WebHookURL: '', Path: '', NoWatermark: false});">
+        Add a new watcher</button>
+    </div>
+
+    <div class="my-5">
+
+      <button type="button" class="my-4 btn btn-danger" href="#" @click="save_config()">
+        Save all Configuration
+      </button>
+    </div>
+
+  </form>
+
+
+
+</main>
 {{ end }}
 
 {{ define "js" }}
+<script src="//unpkg.com/alpinejs" defer></script>
 <script>
-function update_sadness () {
-  if ($('#input-nowatermark').prop('checked')) {
-    $('#sadness').css('visibility','');
-  }
-  else {
-    $('#sadness').css('visibility','hidden');
-  }
-}
-$(document).ready(function() {
+  function configuration() {
+    return {
+      config: {},
+      get_config() {
+        fetch('/rest/config')
+          .then(response => response.json())  // convert to json
+          .then(json => {
+            this.config = json;
+            console.log(json);
+          })
+      },
+      save_config() {
+        fetch('/rest/config', { method: 'POST', body: JSON.stringify(this.config) })
+          .then(response => response.json())  // convert to json
+          .then(json => {
+            this.config = json;
+            console.log(json);
+          })
+      }
 
-  $('#input-nowatermark').on('click', function() { update_sadness(); });
-
-  // populate each field
-  $('.config-item').each(function() {
-    let el = $(this);
-    let key = el.data('key');
-
-    $.ajax({ method: 'get', url: '/rest/config/'+key})
-     .done(function(data) {
-       var this_el = $(".config-item[data-key='"+key+"']").find('.rest-field');
-       if (this_el.hasClass('rest-field-boolean')) {
-         this_el.prop('checked', data.value);
-       }
-       else {
-
-         this_el.val(data.value);
-       }
-       update_sadness();
-
-     });
-    });
-
-  // respond to button clicks to update
-  $('.config-item button').on('click', function(e,f) {
-    key = $(this).parents('.config-item').data('key');
-    val = $(this).parents('.config-item').find('.rest-field').val();
-    if ($(this).parents('.config-item').find('.rest-field-boolean').length) {
-      val = $(this).parents('.config-item').find('.rest-field').prop('checked') ? 1 : 0;
     }
-    $.post('/rest/config/'+key, { value: val })
-     .done(function(d) {
-       if (d.success) {
-         alert('Updated config');
-       } else {
-         alert("Error: " + d.error);
-       }
-     });
+  }
 
-    return false;
-  });
-});
 </script>
 {{ end }}
