@@ -148,7 +148,7 @@ func (ws *WebService) StartWebServer() {
 
 	go func() {
 		listen := fmt.Sprintf(":%d", ws.Config.Config.Port)
-		log.Print("Starting web server on http://localhost%s", listen)
+		log.Printf("Starting web server on http://localhost%s", listen)
 		err := http.ListenAndServe(listen, nil) // set listen port
 		if err != nil {
 			log.Fatal("ListenAndServe: ", err)
