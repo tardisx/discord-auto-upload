@@ -66,9 +66,6 @@ func (u *Uploader) Upload() {
 }
 
 func (u *Upload) processUpload() {
-
-	// file := u.originalFilename
-
 	if u.webhookURL == "" {
 		daulog.SendLog("WebHookURL is not configured - cannot upload!", daulog.LogTypeError)
 		return

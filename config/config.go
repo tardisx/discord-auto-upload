@@ -71,7 +71,7 @@ func DefaultConfig() *ConfigV2 {
 	c.Port = 9090
 	w := Watcher{
 		WebHookURL:  "abcedf",
-		Path:        "/Users/justin/tmp",
+		Path:        "/your/screenshot/dir/here",
 		Username:    "",
 		NoWatermark: false,
 		Exclude:     []string{},
