@@ -64,7 +64,7 @@ func main() {
 
 func startWatchers(config *config.ConfigService, up *upload.Uploader, configChange chan bool) {
 	for {
-		log.Printf("Creating watchers")
+		daulog.SendLog("Creating watchers", daulog.LogTypeInfo)
 		ctx, cancel := context.WithCancel(context.Background())
 		for _, c := range config.Config.Watchers {
 			log.Printf("Creating watcher for %s interval %d", c.Path, config.Config.WatchInterval)
@@ -74,7 +74,7 @@ func startWatchers(config *config.ConfigService, up *upload.Uploader, configChan
 		// wait for single that the config changed
 		<-configChange
 		cancel()
-		log.Printf("starting new watchers due to config change")
+		daulog.SendLog("starting new watchers due to config change", daulog.LogTypeInfo)
 	}
 
 }
@@ -83,7 +83,7 @@ func (w *watch) Watch(interval int, ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("Killing old watcher")
+			daulog.SendLog("Killing old watcher", daulog.LogTypeInfo)
 			return
 		default:
 			newFiles := w.ProcessNewFiles()
@@ -123,11 +123,11 @@ func (w *watch) ProcessNewFiles() []string {
 func (w *watch) checkPath() bool {
 	src, err := os.Stat(w.config.Path)
 	if err != nil {
-		log.Printf("Problem with path '%s': %s", w.config.Path, err)
+		daulog.SendLog(fmt.Sprintf("Problem with path '%s': %s", w.config.Path, err), daulog.LogTypeError)
 		return false
 	}
 	if !src.IsDir() {
-		log.Printf("Problem with path '%s': is not a directory", w.config.Path)
+		daulog.SendLog(fmt.Sprintf("Problem with path '%s': is not a directory", w.config.Path), daulog.LogTypeError)
 		return false
 	}
 	return true
@@ -212,7 +212,6 @@ func checkUpdates() {
 	}
 
 	daulog.SendLog("already running latest version", daulog.LogTypeInfo)
-
 }
 
 func parseOptions() {

@@ -45,14 +45,12 @@ func (ws *WebService) getStatic(w http.ResponseWriter, r *http.Request) {
 	if extension == ".html" { // html file
 		t, err := template.ParseFS(webFS, "data/wrapper.tmpl", "data/"+path)
 		if err != nil {
-			log.Printf("when fetching: %s got: %s", path, err)
+			daulog.SendLog(fmt.Sprintf("when fetching: %s got: %s", path, err), daulog.LogTypeError)
 			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("not found"))
 			return
 		}
-
-		log.Printf("req: %s", r.URL.Path)
 
 		var b struct {
 			Body    string
@@ -71,7 +69,7 @@ func (ws *WebService) getStatic(w http.ResponseWriter, r *http.Request) {
 		otherStatic, err := webFS.ReadFile("data/" + path)
 
 		if err != nil {
-			log.Printf("when fetching: %s got: %s", path, err)
+			daulog.SendLog(fmt.Sprintf("when fetching: %s got: %s", path, err), daulog.LogTypeError)
 			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("not found"))

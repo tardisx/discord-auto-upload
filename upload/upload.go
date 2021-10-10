@@ -188,7 +188,7 @@ func (u *Upload) processUpload() {
 	}
 
 	if retriesRemaining == 0 {
-		log.Fatal("Failed to upload, even after retries")
+		daulog.SendLog("Failed to upload, even after all retries", daulog.LogTypeError)
 	}
 }
 
@@ -233,7 +233,7 @@ func (u *Upload) applyWatermark() {
 
 	im, _, err := image.Decode(reader)
 	if err != nil {
-		log.Printf("Cannot decode image: %v - skipping watermarking", err)
+		daulog.SendLog(fmt.Sprintf("Cannot decode image: %v - skipping watermarking", err), daulog.LogTypeError)
 		u.watermark = false
 		u.filenameToUpload = u.originalFilename
 		return
