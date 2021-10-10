@@ -38,7 +38,8 @@ type ConfigV2 struct {
 }
 
 type ConfigService struct {
-	Config         ConfigV2
+	Config         *ConfigV2
+	Changed        chan bool
 	ConfigFilename string
 }
 
@@ -57,7 +58,7 @@ func (c *ConfigService) LoadOrInit() error {
 	if os.IsNotExist(err) {
 		daulog.SendLog("NOTE: No config file, writing out sample configuration", daulog.LogTypeInfo)
 		daulog.SendLog("You need to set the configuration via the web interface", daulog.LogTypeInfo)
-		c.Config = *DefaultConfig()
+		c.Config = DefaultConfig()
 		return c.Save()
 	} else {
 		return c.Load()
@@ -158,6 +159,7 @@ func (c *ConfigService) Save() error {
 	if err != nil {
 		return fmt.Errorf("cannot save config %s: %s", c.ConfigFilename, err.Error())
 	}
+
 	return nil
 }
 

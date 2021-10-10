@@ -18,7 +18,7 @@ import (
 )
 
 type WebService struct {
-	Config config.ConfigService
+	Config *config.ConfigService
 }
 
 //go:embed data
@@ -129,7 +129,7 @@ func (ws *WebService) handleConfig(w http.ResponseWriter, r *http.Request) {
 			w.Write(j)
 			return
 		}
-		ws.Config.Config = newConfig
+		ws.Config.Config = &newConfig
 		err = ws.Config.Save()
 		if err != nil {
 			w.WriteHeader(400)
@@ -138,6 +138,11 @@ func (ws *WebService) handleConfig(w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
+		// config has changed, so tell the world
+		if ws.Config.Changed != nil {
+			ws.Config.Changed <- true
+		}
+
 	}
 
 	b, _ := json.Marshal(ws.Config.Config)

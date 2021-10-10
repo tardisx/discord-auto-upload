@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -39,8 +40,10 @@ func main() {
 
 	parseOptions()
 
-	// grab the config
+	// grab the config, register to notice changes
 	config := config.DefaultConfigService()
+	configChanged := make(chan bool)
+	config.Changed = configChanged
 	config.LoadOrInit()
 
 	// create the uploader
@@ -48,34 +51,50 @@ func main() {
 
 	// log.Print("Opening web browser")
 	// open.Start("http://localhost:9090")
-	web := web.WebService{Config: *config}
+	web := web.WebService{Config: config}
 	web.StartWebServer()
 
 	go func() { checkUpdates() }()
 
-	// create the watchers
+	// create the watchers, restart them if config changes
+	// blocks forever
+	startWatchers(config, &up, configChanged)
 
-	log.Printf("Conf: %#v", config.Config)
-
-	for _, c := range config.Config.Watchers {
-		log.Printf("Creating watcher for %v", c)
-		watcher := watch{uploader: up, lastCheck: time.Now(), newLastCheck: time.Now(), config: c}
-		go watcher.Watch(config.Config.WatchInterval)
-	}
-
-	select {}
 }
 
-func (w *watch) Watch(interval int) {
+func startWatchers(config *config.ConfigService, up *upload.Uploader, configChange chan bool) {
 	for {
-		newFiles := w.ProcessNewFiles()
-		for _, f := range newFiles {
-			w.uploader.AddFile(f, w.config)
+		log.Printf("Creating watchers")
+		ctx, cancel := context.WithCancel(context.Background())
+		for _, c := range config.Config.Watchers {
+			log.Printf("Creating watcher for %s interval %d", c.Path, config.Config.WatchInterval)
+			watcher := watch{uploader: *up, lastCheck: time.Now(), newLastCheck: time.Now(), config: c}
+			go watcher.Watch(config.Config.WatchInterval, ctx)
 		}
-		// upload them
-		w.uploader.Upload()
-		daulog.SendLog(fmt.Sprintf("sleeping for %ds before next check of %s", interval, w.config.Path), daulog.LogTypeDebug)
-		time.Sleep(time.Duration(interval) * time.Second)
+		// wait for single that the config changed
+		<-configChange
+		cancel()
+		log.Printf("starting new watchers due to config change")
+	}
+
+}
+
+func (w *watch) Watch(interval int, ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Printf("Killing old watcher")
+			return
+		default:
+			newFiles := w.ProcessNewFiles()
+			for _, f := range newFiles {
+				w.uploader.AddFile(f, w.config)
+			}
+			// upload them
+			w.uploader.Upload()
+			daulog.SendLog(fmt.Sprintf("sleeping for %ds before next check of %s", interval, w.config.Path), daulog.LogTypeDebug)
+			time.Sleep(time.Duration(interval) * time.Second)
+		}
 	}
 }
 
@@ -119,7 +138,6 @@ func (w *watch) checkPath() bool {
 // If the file is eligible, not excluded and new enough to care we add it
 // to the passed in array of files
 func (w *watch) checkFile(path string, found *[]string, exclusions []string) error {
-	log.Printf("Considering %s", path)
 
 	extension := strings.ToLower(filepath.Ext(path))
 
