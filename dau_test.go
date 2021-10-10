@@ -27,7 +27,9 @@ func TestWatchNewFiles(t *testing.T) {
 	if len(files) != 0 {
 		t.Errorf("was not zero files (%d): %v", len(files), files)
 	}
+
 	// create a new file
+	time.Sleep(time.Second)
 	os.Create(fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "b.gif"))
 	files = w.ProcessNewFiles()
 	if len(files) != 1 {
