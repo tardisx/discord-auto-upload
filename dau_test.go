@@ -56,6 +56,7 @@ func TestExclsion(t *testing.T) {
 		t.Errorf("was not zero files (%d): %v", len(files), files)
 	}
 	// create a new file that would not hit exclusion, and two that would
+	time.Sleep(time.Second)
 	os.Create(fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "b.gif"))
 	os.Create(fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "b_thumb.gif"))
 	os.Create(fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "tiny_b.jpg"))
