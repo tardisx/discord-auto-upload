@@ -63,8 +63,8 @@ func TestNotFound(t *testing.T) {
 
 func TestGetConfig(t *testing.T) {
 	conf := config.DefaultConfigService()
-	conf.Config = *config.DefaultConfig()
-	s := WebService{Config: *conf}
+	conf.Config = config.DefaultConfig()
+	s := WebService{Config: conf}
 
 	req := httptest.NewRequest(http.MethodGet, "/rest/config", nil)
 	w := httptest.NewRecorder()
