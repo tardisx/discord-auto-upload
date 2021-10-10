@@ -88,7 +88,7 @@ func (w *watch) ProcessNewFiles() []string {
 		// walk the path
 		err := filepath.WalkDir(w.config.Path,
 			func(path string, d fs.DirEntry, err error) error {
-				return w.checkFile(path, &newFiles)
+				return w.checkFile(path, &newFiles, w.config.Exclude)
 			})
 
 		if err != nil {
@@ -116,9 +116,9 @@ func (w *watch) checkPath() bool {
 
 // checkFile checks if a file is eligible, first looking at extension (to
 // avoid statting files uselessly) then modification times.
-// If the file is eligble, and new enough to care we add it to the passed in
-// array of files
-func (w *watch) checkFile(path string, found *[]string) error {
+// If the file is eligible, not excluded and new enough to care we add it
+// to the passed in array of files
+func (w *watch) checkFile(path string, found *[]string, exclusions []string) error {
 	log.Printf("Considering %s", path)
 
 	extension := strings.ToLower(filepath.Ext(path))
@@ -133,7 +133,15 @@ func (w *watch) checkFile(path string, found *[]string) error {
 	}
 
 	if fi.ModTime().After(w.lastCheck) && fi.Mode().IsRegular() {
-		*found = append(*found, path)
+		excluded := false
+		for _, exclusion := range exclusions {
+			if strings.Contains(path, exclusion) {
+				excluded = true
+			}
+		}
+		if !excluded {
+			*found = append(*found, path)
+		}
 	}
 
 	if w.newLastCheck.Before(fi.ModTime()) {
