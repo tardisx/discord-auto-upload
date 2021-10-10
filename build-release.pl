@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-open my $fh, "<", "config/config.go" || die $!;
+open my $fh, "<", "version/version.go" || die $!;
 
 my $version;
 while (<$fh>) {
