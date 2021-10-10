@@ -108,23 +108,36 @@ func (ws *WebService) getLogs(w http.ResponseWriter, r *http.Request) {
 
 func (ws *WebService) handleConfig(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
+
+		type ErrorResponse struct {
+			Error string `json:"error"`
+		}
+
 		newConfig := config.ConfigV2{}
 
 		defer r.Body.Close()
 		b, err := ioutil.ReadAll(r.Body)
 		if err != nil {
+			w.WriteHeader(400)
 			w.Write([]byte("bad body"))
 			return
 		}
 		err = json.Unmarshal(b, &newConfig)
 		if err != nil {
-			w.Write([]byte("bad data"))
-			log.Printf("%s", err)
+			w.WriteHeader(400)
+			j, _ := json.Marshal(ErrorResponse{Error: "badly formed JSON"})
+			w.Write(j)
 			return
 		}
 		ws.Config.Config = newConfig
-		ws.Config.Save()
+		err = ws.Config.Save()
+		if err != nil {
+			w.WriteHeader(400)
+			j, _ := json.Marshal(ErrorResponse{Error: err.Error()})
+			w.Write(j)
 
+			return
+		}
 	}
 
 	b, _ := json.Marshal(ws.Config.Config)

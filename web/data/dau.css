@@ -108,3 +108,6 @@ pre {
 .mastfoot {
   color: rgba(255, 255, 255, .5);
 }
+
+/* for alpine.js */
+[x-cloak] { display: none !important; }

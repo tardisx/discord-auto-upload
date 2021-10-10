@@ -3,9 +3,12 @@
 <main role="main" class="inner DAU" x-data="configuration()" x-init="get_config()">
   <h1 class="DAU-heading">Config</h1>
 
-  </a>
+  <div x-cloak x-show="error" class="alert alert-danger" role="alert" x-text="error">
+  </div>
+  <div x-cloak x-show="success" class="alert alert-success" role="alert" x-text="success">
+  </div>
 
-  <form class="">
+  <form x-cloak class="">
 
     <p>Configuration changes are not made until the Save button is pressed
       at the bottom of this page.
@@ -138,7 +141,7 @@
 
     <div class="my-5">
       <button type="button" class="btn btn-secondary" href="#"
-        @click.prevent="config.Watchers.push({Username: '', WebHookURL: '', Path: '', NoWatermark: false, Exclude: []});">
+        @click.prevent="config.Watchers.push({Username: '', WebHookURL: 'https://webhook.url.here/', Path: '/directory/path/here', NoWatermark: false, Exclude: []});">
         Add a new watcher</button>
     </div>
 
@@ -161,7 +164,7 @@
 <script>
   function configuration() {
     return {
-      config: {},
+      config: {}, error: '', success: '',
       get_config() {
         fetch('/rest/config')
           .then(response => response.json())  // convert to json
@@ -171,11 +174,18 @@
           })
       },
       save_config() {
+        this.error = '';
+        this.success = '';
         fetch('/rest/config', { method: 'POST', body: JSON.stringify(this.config) })
           .then(response => response.json())  // convert to json
           .then(json => {
-            this.config = json;
-            console.log(json);
+            if (json.error) {
+              this.error = json.error
+            } else {
+              this.success = 'Configuration saved';
+              this.config = json;
+            }
+            window.scrollTo(0,0);
           })
       }
 

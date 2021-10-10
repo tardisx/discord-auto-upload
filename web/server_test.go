@@ -78,7 +78,7 @@ func TestGetConfig(t *testing.T) {
 		t.Errorf("expected error to be nil got %v", err)
 	}
 
-	if string(b) != `{"WatchInterval":10,"Version":2,"Port":9090,"Watchers":[{"WebHookURL":"abcedf","Path":"/your/screenshot/dir/here","Username":"","NoWatermark":false,"Exclude":[]}]}` {
+	if string(b) != `{"WatchInterval":10,"Version":2,"Port":9090,"Watchers":[{"WebHookURL":"https://webhook.url.here","Path":"/your/screenshot/dir/here","Username":"","NoWatermark":false,"Exclude":[]}]}` {
 		t.Errorf("Got unexpected response %v", string(b))
 	}
 }

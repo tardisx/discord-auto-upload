@@ -70,7 +70,7 @@ func DefaultConfig() *ConfigV2 {
 	c.WatchInterval = 10
 	c.Port = 9090
 	w := Watcher{
-		WebHookURL:  "abcedf",
+		WebHookURL:  "https://webhook.url.here",
 		Path:        "/your/screenshot/dir/here",
 		Username:    "",
 		NoWatermark: false,
@@ -127,6 +127,28 @@ func (c *ConfigService) Load() error {
 
 func (c *ConfigService) Save() error {
 	daulog.SendLog("saving configuration", daulog.LogTypeInfo)
+	// sanity checks
+	for _, watcher := range c.Config.Watchers {
+
+		// give the sample one a pass? this is kinda gross...
+		if watcher.Path == "/your/screenshot/dir/here" {
+			continue
+		}
+		info, err := os.Stat(watcher.Path)
+		if os.IsNotExist(err) {
+			return fmt.Errorf("path '%s' does not exist", watcher.Path)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("path '%s' is not a directory", watcher.Path)
+		}
+	}
+
+	for _, watcher := range c.Config.Watchers {
+		if strings.Index(watcher.WebHookURL, "https://") != 0 {
+			return fmt.Errorf("webhook URL '%s' does not look valid", watcher.WebHookURL)
+		}
+	}
+
 	jsonString, _ := json.Marshal(c.Config)
 	err := ioutil.WriteFile(c.ConfigFilename, jsonString, os.ModePerm)
 	if err != nil {
