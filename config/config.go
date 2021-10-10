@@ -149,6 +149,10 @@ func (c *ConfigService) Save() error {
 		}
 	}
 
+	if c.Config.WatchInterval < 1 {
+		return fmt.Errorf("watch interval should be greater than 0 - '%d' invalid", c.Config.WatchInterval)
+	}
+
 	jsonString, _ := json.Marshal(c.Config)
 	err := ioutil.WriteFile(c.ConfigFilename, jsonString, os.ModePerm)
 	if err != nil {
