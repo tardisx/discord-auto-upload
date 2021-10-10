@@ -14,11 +14,13 @@ import (
 
 	"github.com/tardisx/discord-auto-upload/config"
 	daulog "github.com/tardisx/discord-auto-upload/log"
+	"github.com/tardisx/discord-auto-upload/upload"
 	"github.com/tardisx/discord-auto-upload/version"
 )
 
 type WebService struct {
-	Config *config.ConfigService
+	Config   *config.ConfigService
+	Uploader *upload.Uploader
 }
 
 //go:embed data
@@ -149,19 +151,19 @@ func (ws *WebService) handleConfig(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-// func getUploads(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	ups := uploads.Uploads
-// 	text, _ := json.Marshal(ups)
-// 	w.Write([]byte(text))
-// }
+func (ws *WebService) getUploads(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	ups := ws.Uploader.Uploads
+	text, _ := json.Marshal(ups)
+	w.Write([]byte(text))
+}
 
 func (ws *WebService) StartWebServer() {
 
 	http.HandleFunc("/", ws.getStatic)
 
 	http.HandleFunc("/rest/logs", ws.getLogs)
-	// http.HandleFunc("/rest/uploads", getUploads)
+	http.HandleFunc("/rest/uploads", ws.getUploads)
 	http.HandleFunc("/rest/config", ws.handleConfig)
 
 	go func() {

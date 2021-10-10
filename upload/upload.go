@@ -23,7 +23,7 @@ import (
 )
 
 type Uploader struct {
-	Uploads []*Upload
+	Uploads []*Upload `json:"uploads"`
 }
 
 type Upload struct {
@@ -45,6 +45,13 @@ type Upload struct {
 	Height int `json:"height"`
 }
 
+func NewUploader() *Uploader {
+	u := Uploader{}
+	uploads := make([]*Upload, 0)
+	u.Uploads = uploads
+	return &u
+}
+
 func (u *Uploader) AddFile(file string, conf config.Watcher) {
 	thisUpload := Upload{
 		Uploaded:         false,
@@ -58,6 +65,7 @@ func (u *Uploader) AddFile(file string, conf config.Watcher) {
 
 // Upload uploads any files that have not yet been uploaded
 func (u *Uploader) Upload() {
+
 	for _, upload := range u.Uploads {
 		if !upload.Uploaded {
 			upload.processUpload()

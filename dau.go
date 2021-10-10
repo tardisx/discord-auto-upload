@@ -33,7 +33,7 @@ type watch struct {
 	lastCheck    time.Time
 	newLastCheck time.Time
 	config       config.Watcher
-	uploader     upload.Uploader
+	uploader     *upload.Uploader
 }
 
 func main() {
@@ -47,18 +47,18 @@ func main() {
 	config.LoadOrInit()
 
 	// create the uploader
-	up := upload.Uploader{}
+	up := upload.NewUploader()
 
 	// log.Print("Opening web browser")
 	// open.Start("http://localhost:9090")
-	web := web.WebService{Config: config}
+	web := web.WebService{Config: config, Uploader: up}
 	web.StartWebServer()
 
 	go func() { checkUpdates() }()
 
 	// create the watchers, restart them if config changes
 	// blocks forever
-	startWatchers(config, &up, configChanged)
+	startWatchers(config, up, configChanged)
 
 }
 
@@ -68,7 +68,7 @@ func startWatchers(config *config.ConfigService, up *upload.Uploader, configChan
 		ctx, cancel := context.WithCancel(context.Background())
 		for _, c := range config.Config.Watchers {
 			log.Printf("Creating watcher for %s interval %d", c.Path, config.Config.WatchInterval)
-			watcher := watch{uploader: *up, lastCheck: time.Now(), newLastCheck: time.Now(), config: c}
+			watcher := watch{uploader: up, lastCheck: time.Now(), newLastCheck: time.Now(), config: c}
 			go watcher.Watch(config.Config.WatchInterval, ctx)
 		}
 		// wait for single that the config changed
