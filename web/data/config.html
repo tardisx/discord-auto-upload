@@ -55,6 +55,12 @@
       change only, and does not hide the uploaders actual identity.
     </p>
 
+    <p>Exclusions can be specified, zero or more arbitrary strings. If any
+      file matches one of those strings then it will not be uploaded. This is most
+      often used if you use software (like Steam) which automatically creates thumbnails
+      in the same directory as the screenshots.
+    </p>
+
     <template x-for="(watcher, i) in config.Watchers">
       <div class="my-5">
         <div class="form-row align-items-center">
@@ -96,6 +102,33 @@
           </div>
         </div>
 
+
+        <div class="form-row align-items-center">
+          <div class="col-sm-6 my-1">
+            <span>Exclusions</span>
+          </div>
+          <div class="col-sm-6 my-1">
+            <template x-for="(exclude, j) in config.Watchers[i].Exclude">
+              <div class="form-row">
+                <div class="col">
+                  <input type="text" class="form-control" x-model="config.Watchers[i].Exclude[j]">
+                </div>
+                <div class="col">
+                  <button type="button" class="btn btn-danger" href="#" @click.prevent="config.Watchers[i].Exclude.splice(j, 1);">
+                  -            
+                  </button>
+                </div>
+              </div> 
+     
+            </template>
+            <button type="button" class="btn btn-secondary" href="#"
+             @click.prevent="config.Watchers[i].Exclude.push('');">
+        +</button>
+          </div>
+        </div>
+
+
+
         <button type="button" class="btn btn-primary" href="#" @click.prevent="config.Watchers.splice(i, 1);">Remove
           this watcher</button>
 
@@ -105,7 +138,7 @@
 
     <div class="my-5">
       <button type="button" class="btn btn-secondary" href="#"
-        @click.prevent="config.Watchers.push({Username: '', WebHookURL: '', Path: '', NoWatermark: false});">
+        @click.prevent="config.Watchers.push({Username: '', WebHookURL: '', Path: '', NoWatermark: false, Exclude: []});">
         Add a new watcher</button>
     </div>
 
