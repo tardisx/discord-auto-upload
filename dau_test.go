@@ -31,7 +31,7 @@ func TestWatchNewFiles(t *testing.T) {
 	os.Create(fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "b.gif"))
 	files = w.ProcessNewFiles()
 	if len(files) != 1 {
-		t.Error("was not one file")
+		t.Errorf("was not one file - got: %v", files)
 	}
 	if files[0] != fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "b.gif") {
 		t.Error("wrong file")
