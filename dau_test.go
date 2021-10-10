@@ -19,7 +19,7 @@ func TestWatchNewFiles(t *testing.T) {
 
 	w := watch{
 		config:       config.Watcher{Path: dir},
-		uploader:     upload.Uploader{},
+		uploader:     upload.NewUploader(),
 		lastCheck:    time.Now(),
 		newLastCheck: time.Now(),
 	}
@@ -47,7 +47,7 @@ func TestExclsion(t *testing.T) {
 
 	w := watch{
 		config:       config.Watcher{Path: dir, Exclude: []string{"thumb", "tiny"}},
-		uploader:     upload.Uploader{},
+		uploader:     upload.NewUploader(),
 		lastCheck:    time.Now(),
 		newLastCheck: time.Now(),
 	}
@@ -73,7 +73,7 @@ func TestCheckPath(t *testing.T) {
 
 	w := watch{
 		config:       config.Watcher{Path: dir},
-		uploader:     upload.Uploader{},
+		uploader:     upload.NewUploader(),
 		lastCheck:    time.Now(),
 		newLastCheck: time.Now(),
 	}
