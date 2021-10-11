@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.11.1] - 2021-10-11
+
+- Improve logging and error handling
+- Improve tests
+- Fix problem where attachments too large for discord fail immediately and do not retry
+- Fix problem with version checking
+
 ## [v0.11.0] - 2021-10-10
 
 - Switched to semantic versioning
