@@ -37,11 +37,10 @@ func init() {
 }
 
 func SendLog(entry string, entryType LogEntryType) {
-
 	logInput <- LogEntry{
 		Timestamp: time.Now(),
 		Entry:     entry,
 		Type:      entryType,
 	}
-	log.Printf(entry)
+	log.Printf("%6s: %s", entryType, entry)
 }
