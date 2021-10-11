@@ -152,7 +152,13 @@ func (ws *WebService) handleConfig(w http.ResponseWriter, r *http.Request) {
 func (ws *WebService) getUploads(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ups := ws.Uploader.Uploads
-	text, _ := json.Marshal(ups)
+
+	text, err := json.Marshal(ups)
+	if err != nil {
+		daulog.SendLog(fmt.Sprintf("err: %v", err), daulog.LogTypeError)
+		w.Write([]byte("could not marshall uploads?"))
+		return
+	}
 	w.Write([]byte(text))
 }
 
