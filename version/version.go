@@ -7,7 +7,7 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-const CurrentVersion string = "v0.11.0"
+const CurrentVersion string = "v0.12.0"
 
 func NewVersionAvailable(v string) bool {
 	if !semver.IsValid(CurrentVersion) {
@@ -22,7 +22,7 @@ func NewVersionAvailable(v string) bool {
 	if comp == 0 {
 		return false
 	}
-	if comp == -1 {
+	if comp == 1 {
 		return true
 	}
 	return false // they are using a newer one than exists?
