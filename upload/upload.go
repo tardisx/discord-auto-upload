@@ -51,7 +51,7 @@ type Upload struct {
 	Width  int `json:"width"`
 	Height int `json:"height"`
 
-	Client HTTPClient
+	Client HTTPClient `json:"-"`
 }
 
 func NewUploader() *Uploader {
