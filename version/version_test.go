@@ -5,7 +5,7 @@ import (
 )
 
 func TestVersioning(t *testing.T) {
-	if !NewVersionAvailable("v0.1.0") {
-		t.Error("should be a version newer than v0.1.0")
+	if !NewVersionAvailable("v1.0.0") {
+		t.Error("should be a version newer than v1.0.0")
 	}
 }
