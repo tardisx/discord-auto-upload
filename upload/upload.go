@@ -15,12 +15,17 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"errors"
 
 	"github.com/fogleman/gg"
 	"github.com/tardisx/discord-auto-upload/config"
 	daulog "github.com/tardisx/discord-auto-upload/log"
 	"golang.org/x/image/font/inconsolata"
 )
+
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
 
 type Uploader struct {
 	Uploads []*Upload `json:"uploads"`
@@ -43,6 +48,8 @@ type Upload struct {
 
 	Width  int `json:"width"`
 	Height int `json:"height"`
+
+	Client HTTPClient
 }
 
 func NewUploader() *Uploader {
@@ -73,10 +80,10 @@ func (u *Uploader) Upload() {
 	}
 }
 
-func (u *Upload) processUpload() {
+func (u *Upload) processUpload() error {
 	if u.webhookURL == "" {
 		daulog.SendLog("WebHookURL is not configured - cannot upload!", daulog.LogTypeError)
-		return
+		return errors.New("webhook url not configured")
 	}
 
 	if u.watermark {
@@ -112,11 +119,18 @@ func (u *Upload) processUpload() {
 
 		request, err := newfileUploadRequest(u.webhookURL, extraParams, "file", u.filenameToUpload)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("error creating upload request: %s", err)
+			return fmt.Errorf("could not create upload request: %s", err)
 		}
 		start := time.Now()
-		client := &http.Client{Timeout: time.Second * 30}
-		resp, err := client.Do(request)
+
+		if u.Client == nil {
+	          // if no client was specified (a unit test) then create
+		  // a default one
+		  u.Client = &http.Client{Timeout: time.Second * 30}
+		}
+
+		resp, err := u.Client.Do(request)
 		if err != nil {
 			log.Print("Error performing request:", err)
 			retriesRemaining--
@@ -190,12 +204,13 @@ func (u *Upload) processUpload() {
 	if retriesRemaining == 0 {
 		daulog.SendLog("Failed to upload, even after all retries", daulog.LogTypeError)
 	}
+	return nil
 }
 
 func newfileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not open file '%s': %s", path, err)
 	}
 	defer file.Close()
 
