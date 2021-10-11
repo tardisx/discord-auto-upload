@@ -5,6 +5,7 @@ package upload
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	"io"
@@ -15,7 +16,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"errors"
 
 	"github.com/fogleman/gg"
 	"github.com/tardisx/discord-auto-upload/config"
@@ -34,6 +34,8 @@ type Uploader struct {
 type Upload struct {
 	Uploaded   bool      `json:"uploaded"` // has this file been uploaded to discord
 	UploadedAt time.Time `json:"uploaded_at"`
+
+	Failed bool `json:"failed"`
 
 	originalFilename string // path on the local disk
 	filenameToUpload string // post-watermark, or just original if unwatermarked
@@ -74,20 +76,22 @@ func (u *Uploader) AddFile(file string, conf config.Watcher) {
 func (u *Uploader) Upload() {
 
 	for _, upload := range u.Uploads {
-		if !upload.Uploaded {
+		if !upload.Uploaded && !upload.Failed {
 			upload.processUpload()
 		}
 	}
 }
 
 func (u *Upload) processUpload() error {
+	daulog.SendLog(fmt.Sprintf("Uploading: %s", u.originalFilename), daulog.LogTypeInfo)
+
 	if u.webhookURL == "" {
 		daulog.SendLog("WebHookURL is not configured - cannot upload!", daulog.LogTypeError)
 		return errors.New("webhook url not configured")
 	}
 
 	if u.watermark {
-		daulog.SendLog("Watermarking", daulog.LogTypeInfo)
+		daulog.SendLog("Watermarking image", daulog.LogTypeInfo)
 		u.applyWatermark()
 	} else {
 		u.filenameToUpload = u.originalFilename
@@ -125,9 +129,9 @@ func (u *Upload) processUpload() error {
 		start := time.Now()
 
 		if u.Client == nil {
-	          // if no client was specified (a unit test) then create
-		  // a default one
-		  u.Client = &http.Client{Timeout: time.Second * 30}
+			// if no client was specified (a unit test) then create
+			// a default one
+			u.Client = &http.Client{Timeout: time.Second * 30}
 		}
 
 		resp, err := u.Client.Do(request)
@@ -203,6 +207,8 @@ func (u *Upload) processUpload() error {
 
 	if retriesRemaining == 0 {
 		daulog.SendLog("Failed to upload, even after all retries", daulog.LogTypeError)
+		u.Failed = true
+		return errors.New("could not upload after all retries")
 	}
 	return nil
 }
