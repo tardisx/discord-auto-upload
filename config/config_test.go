@@ -10,10 +10,14 @@ func TestNoConfig(t *testing.T) {
 	c := ConfigService{}
 
 	c.ConfigFilename = emptyTempFile()
-	os.Remove(c.ConfigFilename)
+	err := os.Remove(c.ConfigFilename)
+	if err != nil {
+		t.Fatalf("could not remove file: %v", err)
+	}
+
 	defer os.Remove(c.ConfigFilename) // because we are about to create it
 
-	err := c.LoadOrInit()
+	err = c.LoadOrInit()
 	if err != nil {
 		t.Errorf("unexpected failure from load: %s", err)
 	}
@@ -84,6 +88,7 @@ func emptyTempFile() string {
 	if err != nil {
 		panic(err)
 	}
+	f.Close()
 	return f.Name()
 }
 

@@ -80,7 +80,11 @@ func TestCheckPath(t *testing.T) {
 	if !w.checkPath() {
 		t.Error("checkPath failed?")
 	}
-	os.RemoveAll(dir)
+
+	err := os.RemoveAll(dir)
+	if err != nil {
+		t.Fatalf("could not remove test dir: %v", err)
+	}
 	if w.checkPath() {
 		t.Error("checkPath succeeded when shouldn't?")
 	}
@@ -91,9 +95,11 @@ func createFileTree() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	os.Create(fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "a.gif"))
-	os.Create(fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "a.jpg"))
-	os.Create(fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "a.png"))
-
+	f1, _ := os.Create(fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "a.gif"))
+	f2, _ := os.Create(fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "a.jpg"))
+	f3, _ := os.Create(fmt.Sprintf("%s%c%s", dir, os.PathSeparator, "a.png"))
+	f1.Close()
+	f2.Close()
+	f3.Close()
 	return dir
 }
