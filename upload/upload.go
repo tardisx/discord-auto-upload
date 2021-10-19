@@ -144,6 +144,7 @@ func (u *Upload) processUpload() error {
 			if resp.StatusCode == 413 {
 				// just fail immediately, we know this means the file was too big
 				daulog.SendLog("413 received - file too large", daulog.LogTypeError)
+				u.Failed = true
 				return errors.New("received 413 - file too large")
 			}
 
