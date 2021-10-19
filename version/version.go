@@ -7,7 +7,7 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-const CurrentVersion string = "v0.11.1"
+const CurrentVersion string = "v0.11.2"
 
 func NewVersionAvailable(v string) bool {
 	if !semver.IsValid(CurrentVersion) {
