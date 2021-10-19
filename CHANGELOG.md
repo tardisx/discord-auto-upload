@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## [v0.11.2] - 2021-10-19
 
 - Really fix the bug where too large attachments keep retrying
+- Fix tests on Windows
 
 ## [v0.11.1] - 2021-10-11
 
