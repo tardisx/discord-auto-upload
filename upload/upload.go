@@ -23,6 +23,16 @@ import (
 	"golang.org/x/image/font/inconsolata"
 )
 
+type State int
+
+const (
+	Pending = iota
+	Queued
+	Uploading
+	Complete
+	Failed
+)
+
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }

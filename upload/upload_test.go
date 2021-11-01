@@ -2,7 +2,11 @@ package upload
 
 import (
 	"bytes"
+	"image"
+	"image/color"
+	"image/png"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"testing"
@@ -69,4 +73,29 @@ func TestTooBigUpload(t *testing.T) {
 	if u.Failed != true {
 		t.Error("upload should have been marked failed")
 	}
+}
+
+func tempImageGt8Mb() {
+	// about 12Mb
+	width := 2000
+	height := 2000
+
+	upLeft := image.Point{0, 0}
+	lowRight := image.Point{width, height}
+
+	img := image.NewRGBA(image.Rectangle{upLeft, lowRight})
+
+	// Colors are defined by Red, Green, Blue, Alpha uint8 values.
+
+	// Set color for each pixel.
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			color := color.RGBA{uint8(rand.Int31n(256)), uint8(rand.Int31n(256)), uint8(rand.Int31n(256)), 0xff}
+			img.Set(x, y, color)
+		}
+	}
+
+	// Encode as PNG.
+	f, _ := os.Create("image.png")
+	png.Encode(f, img)
 }
