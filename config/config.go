@@ -94,8 +94,6 @@ func (c *ConfigService) Load() error {
 		return fmt.Errorf("cannot decode config file %s: %s", c.ConfigFilename, err.Error())
 	}
 
-	fmt.Printf("Got config: %#v", c.Config)
-
 	// Version 0 predates config migrations
 	if c.Config.Version == 0 {
 		// need to migrate this
