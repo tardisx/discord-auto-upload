@@ -58,7 +58,7 @@ type Upload struct {
 	Width  int `json:"width"`
 	Height int `json:"height"`
 
-	State State `json:state"`
+	State State `json:"state"`
 
 	Client HTTPClient `json:"-"`
 }
