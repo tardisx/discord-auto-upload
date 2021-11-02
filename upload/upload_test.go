@@ -70,7 +70,7 @@ func TestTooBigUpload(t *testing.T) {
 	} else if err.Error() != "received 413 - file too large" {
 		t.Errorf("wrong error occurred: %s", err.Error())
 	}
-	if u.Failed != true {
+	if u.State != StateFailed {
 		t.Error("upload should have been marked failed")
 	}
 }

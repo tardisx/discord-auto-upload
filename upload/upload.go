@@ -23,14 +23,14 @@ import (
 	"golang.org/x/image/font/inconsolata"
 )
 
-type State int
+type State string
 
 const (
-	Pending = iota
-	Queued
-	Uploading
-	Complete
-	Failed
+	StatePending   State = "Pending"
+	StateQueued    State = "Queued"
+	StateUploading State = "Uploading"
+	StateComplete  State = "Complete"
+	StateFailed    State = "Failed"
 )
 
 type HTTPClient interface {
@@ -42,10 +42,7 @@ type Uploader struct {
 }
 
 type Upload struct {
-	Uploaded   bool      `json:"uploaded"` // has this file been uploaded to discord
 	UploadedAt time.Time `json:"uploaded_at"`
-
-	Failed bool `json:"failed"`
 
 	originalFilename string // path on the local disk
 	filenameToUpload string // post-watermark, or just original if unwatermarked
@@ -61,6 +58,8 @@ type Upload struct {
 	Width  int `json:"width"`
 	Height int `json:"height"`
 
+	State State `json:state"`
+
 	Client HTTPClient `json:"-"`
 }
 
@@ -73,11 +72,11 @@ func NewUploader() *Uploader {
 
 func (u *Uploader) AddFile(file string, conf config.Watcher) {
 	thisUpload := Upload{
-		Uploaded:         false,
 		originalFilename: file,
 		watermark:        !conf.NoWatermark,
 		webhookURL:       conf.WebHookURL,
 		usernameOverride: conf.Username,
+		State:            StatePending,
 	}
 	u.Uploads = append(u.Uploads, &thisUpload)
 }
@@ -86,7 +85,7 @@ func (u *Uploader) AddFile(file string, conf config.Watcher) {
 func (u *Uploader) Upload() {
 
 	for _, upload := range u.Uploads {
-		if !upload.Uploaded && !upload.Failed {
+		if upload.State == StateQueued {
 			upload.processUpload()
 		}
 	}
@@ -154,7 +153,7 @@ func (u *Upload) processUpload() error {
 			if resp.StatusCode == 413 {
 				// just fail immediately, we know this means the file was too big
 				daulog.SendLog("413 received - file too large", daulog.LogTypeError)
-				u.Failed = true
+				u.State = StateFailed
 				return errors.New("received 413 - file too large")
 			}
 
@@ -207,7 +206,7 @@ func (u *Upload) processUpload() error {
 			daulog.SendLog(fmt.Sprintf("id: %d, %d bytes transferred in %.2f seconds (%.2f KiB/s)", res.ID, a.Size, elapsed.Seconds(), rate), daulog.LogTypeInfo)
 
 			u.Url = a.URL
-			u.Uploaded = true
+			u.State = StateComplete
 			u.Width = a.Width
 			u.Height = a.Height
 			u.UploadedAt = time.Now()
@@ -223,7 +222,7 @@ func (u *Upload) processUpload() error {
 
 	if retriesRemaining == 0 {
 		daulog.SendLog("Failed to upload, even after all retries", daulog.LogTypeError)
-		u.Failed = true
+		u.State = StateFailed
 		return errors.New("could not upload after all retries")
 	}
 	return nil
