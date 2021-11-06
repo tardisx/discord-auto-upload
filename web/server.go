@@ -10,8 +10,11 @@ import (
 	"mime"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/tardisx/discord-auto-upload/config"
 	daulog "github.com/tardisx/discord-auto-upload/log"
 	"github.com/tardisx/discord-auto-upload/upload"
@@ -21,6 +24,19 @@ import (
 type WebService struct {
 	Config   *config.ConfigService
 	Uploader *upload.Uploader
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+type StartUploadRequest struct {
+	Id int32 `json:"id"`
+}
+
+type StartUploadResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
 }
 
 //go:embed data
@@ -43,6 +59,7 @@ func (ws *WebService) getStatic(w http.ResponseWriter, r *http.Request) {
 	extension := filepath.Ext(string(path))
 
 	if extension == ".html" { // html file
+
 		t, err := template.ParseFS(webFS, "data/wrapper.tmpl", "data/"+path)
 		if err != nil {
 			daulog.SendLog(fmt.Sprintf("when fetching: %s got: %s", path, err), daulog.LogTypeError)
@@ -109,33 +126,23 @@ func (ws *WebService) getLogs(w http.ResponseWriter, r *http.Request) {
 func (ws *WebService) handleConfig(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 
-		type ErrorResponse struct {
-			Error string `json:"error"`
-		}
-
 		newConfig := config.ConfigV2{}
 
 		defer r.Body.Close()
 		b, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			w.WriteHeader(400)
-			w.Write([]byte("bad body"))
+			returnJSONError(w, "could not read body?")
 			return
 		}
 		err = json.Unmarshal(b, &newConfig)
 		if err != nil {
-			w.WriteHeader(400)
-			j, _ := json.Marshal(ErrorResponse{Error: "badly formed JSON"})
-			w.Write(j)
+			returnJSONError(w, "badly formed JSON")
 			return
 		}
 		ws.Config.Config = &newConfig
 		err = ws.Config.Save()
 		if err != nil {
-			w.WriteHeader(400)
-			j, _ := json.Marshal(ErrorResponse{Error: err.Error()})
-			w.Write(j)
-
+			returnJSONError(w, err.Error())
 			return
 		}
 		// config has changed, so tell the world
@@ -155,27 +162,92 @@ func (ws *WebService) getUploads(w http.ResponseWriter, r *http.Request) {
 
 	text, err := json.Marshal(ups)
 	if err != nil {
-		daulog.SendLog(fmt.Sprintf("err: %v", err), daulog.LogTypeError)
-		w.Write([]byte("could not marshall uploads?"))
-		return
+		// not sure how this would happen, so we probably want to find out the hard way
+		panic(err)
 	}
 	w.Write([]byte(text))
 }
 
+func (ws *WebService) modifyUpload(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == "POST" {
+
+		vars := mux.Vars(r)
+		change := vars["change"]
+		id, err := strconv.ParseInt(vars["id"], 10, 32)
+		if err != nil {
+			returnJSONError(w, "bad id")
+			return
+		}
+
+		for _, anUpload := range ws.Uploader.Uploads {
+			if anUpload.Id == int32(id) {
+				if anUpload.State == upload.StatePending {
+					if change == "start" {
+						anUpload.State = upload.StateQueued
+						res := StartUploadResponse{Success: true, Message: "upload queued"}
+						resString, _ := json.Marshal(res)
+						w.Write(resString)
+						return
+					} else if change == "skip" {
+						anUpload.State = upload.StateSkipped
+						res := StartUploadResponse{Success: true, Message: "upload skipped"}
+						resString, _ := json.Marshal(res)
+						w.Write(resString)
+						return
+					} else {
+						returnJSONError(w, "bad change type")
+						return
+					}
+				}
+			}
+		}
+		res := StartUploadResponse{Success: false, Message: "upload does not exist, or already queued"}
+		resString, _ := json.Marshal(res)
+		w.WriteHeader(400)
+		w.Write(resString)
+		return
+	}
+	returnJSONError(w, "bad request")
+	return
+
+}
+
 func (ws *WebService) StartWebServer() {
 
-	http.HandleFunc("/", ws.getStatic)
+	r := mux.NewRouter()
 
-	http.HandleFunc("/rest/logs", ws.getLogs)
-	http.HandleFunc("/rest/uploads", ws.getUploads)
-	http.HandleFunc("/rest/config", ws.handleConfig)
+	r.HandleFunc("/rest/logs", ws.getLogs)
+	r.HandleFunc("/rest/uploads", ws.getUploads)
+	r.HandleFunc("/rest/upload/{id:[0-9]+}/{change}", ws.modifyUpload)
+
+	r.HandleFunc("/rest/config", ws.handleConfig)
+	r.PathPrefix("/").HandlerFunc(ws.getStatic)
 
 	go func() {
 		listen := fmt.Sprintf(":%d", ws.Config.Config.Port)
 		log.Printf("Starting web server on http://localhost%s", listen)
-		err := http.ListenAndServe(listen, nil) // set listen port
-		if err != nil {
-			log.Fatal("ListenAndServe: ", err)
+
+		srv := &http.Server{
+			Handler: r,
+			Addr:    listen,
+			// Good practice: enforce timeouts for servers you create!
+			WriteTimeout: 15 * time.Second,
+			ReadTimeout:  15 * time.Second,
 		}
+
+		log.Fatal(srv.ListenAndServe())
+
 	}()
+}
+
+func returnJSONError(w http.ResponseWriter, errMessage string) {
+	w.WriteHeader(400)
+	errJSON := ErrorResponse{
+		Error: errMessage,
+	}
+	errString, _ := json.Marshal(errJSON)
+	w.Write(errString)
 }

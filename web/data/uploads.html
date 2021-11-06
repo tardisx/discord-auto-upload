@@ -1,45 +1,129 @@
 {{ define "content" }}
 
- <main role="main" class="inner DAU">
+ <main role="main" x-data="uploads()" x-init="get_uploads();" class="inner DAU">
    <h1 class="DAU-heading">Uploads</h1>
    <p class="lead">Discord-auto-upload uploads</p>
 
+   <h2>Pending uploads</h2>
+   
    <table class="table table-condensed table-dark">
      <thead>
-       <tr><th>uploaded</th><th>dt</th><th>thumb</th></tr>
+       <tr>
+         <th>filename</th>
+         <th>actions</th>
+      </tr>
       </thead>
-      <tbody id="uploads">
+      <tbody>
+        <template x-for="ul in pending">
+          <tr>
+            <td x-text="ul.original_file"></td>
+            <td>
+              <button @click="start_upload(ul.id)" type="button" class="btn btn-primary">upload</button>
+              <button @click="skip_upload(ul.id)" type="button" class="btn btn-primary">reject</button>
+
+            </td>
+          </tr>
+        </template>
+
+      </tbody>
+    </table>
+
+    <h2>Current uploads</h2>
+   
+    <table class="table table-condensed table-dark">
+      <thead>
+        <tr>
+          <th>filename</th>
+          <th>actions</th>
+        </tr>
+      </thead>
+      <tbody>
+       
+        <template x-for="ul in uploads">
+          <tr>
+            <td x-text="ul.original_file"></td>
+            <td>
+              <button @click="start_upload(ul.id)" type="button" class="btn btn-primary">upload</button>
+            </td>
+          </tr>
+        </template>
 
       </tbody>
    </table>
+
+   <h2>Completed uploads</h2>
+   
+   <table class="table table-condensed table-dark">
+     <thead>
+       <tr>
+         <th>filename</th>
+         <th>state</th>
+       </tr>
+     </thead>
+     <tbody>
+      
+       <template x-for="ul in finished">
+         <tr>
+           <td x-text="ul.original_file"></td>
+           <td x-text="ul.state"></td>
+         </tr>
+       </template>
+
+     </tbody>
+  </table>
+
+
 </main>
 
 {{ end }}
 
 {{ define "js" }}
 <script>
-
-$(document).ready(function() {
-  get_uploads();
-});
-
-function get_uploads() {
-  $.ajax({ method: 'get', url: '/rest/uploads'})
-   .done(function(data) {
-      console.log(data);
-      $('#uploads').empty();
-      if (! data) { return }
-      data.forEach(i => {
-      // {uploaded: true, uploaded_at: "2021-06-08T21:59:52.855936+09:30", url: "https://cdn.discordapp.com/attachments/849615269706203171/851800197046468628/dau736004285.png", width: 640, height: 640}
-        console.log(i);
-        row = $('<tr>');
-        row.append($('<td>').text(i.uploaded ? 'yes' : 'no'));
-        row.append($('<td>').text(i.uploaded_at));
-        row.append($('<td>').html($('<img>', { width : i.width/10, height : i.height/10, src : i.url })));
-        $('#uploads').prepend(row);
-      });
-    });
-}
+function uploads() {
+    return {
+      pending: [], uploads: [], finished: [],
+      start_upload(id) {
+        console.log(id);
+        fetch('/rest/upload/'+id+'/start', {method: 'POST'})
+          .then(response => response.json())  // convert to json
+          .then(json => {
+            console.log(json);
+          })
+      },
+      skip_upload(id) {
+        console.log(id);
+        fetch('/rest/upload/'+id+'/skip', {method: 'POST'})
+          .then(response => response.json())  // convert to json
+          .then(json => {
+            console.log(json);
+          })
+      },
+      get_uploads() {
+        fetch('/rest/uploads')
+          .then(response => response.json())  // convert to json
+          .then(json => {
+            this.pending = [];
+            this.uploads = [];
+            this.finished = [];
+            json.forEach(ul => {
+              if (ul.state == 'Pending') {
+                this.pending.push(ul);
+              }
+              else if (ul.state == 'Complete' || ul.state == 'Failed' || ul.state == 'Skipped') {
+                this.finished.push(ul)
+              }
+              else {
+                this.uploads.push(ul);
+              }
+            });
+            this.config = json;
+            console.log(json);
+            let self = this;
+            setTimeout(function() { self.get_uploads(); } , 1000);
+          })
+      },
+    }
+  }
 
 </script>
 {{ end }}

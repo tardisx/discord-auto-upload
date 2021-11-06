@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"github.com/fogleman/gg"
@@ -26,12 +27,15 @@ import (
 type State string
 
 const (
-	StatePending   State = "Pending"
-	StateQueued    State = "Queued"
-	StateUploading State = "Uploading"
-	StateComplete  State = "Complete"
-	StateFailed    State = "Failed"
+	StatePending   State = "Pending"   // waiting for decision to upload (could be edited)
+	StateQueued    State = "Queued"    // ready for upload
+	StateUploading State = "Uploading" // uploading
+	StateComplete  State = "Complete"  // finished successfully
+	StateFailed    State = "Failed"    // failed
+	StateSkipped   State = "Skipped"   // user did not want to upload
 )
+
+var currentId int32
 
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -42,10 +46,11 @@ type Uploader struct {
 }
 
 type Upload struct {
+	Id         int32     `json:"id"`
 	UploadedAt time.Time `json:"uploaded_at"`
 
-	originalFilename string // path on the local disk
-	filenameToUpload string // post-watermark, or just original if unwatermarked
+	OriginalFilename      string `json:"original_file"` // path on the local disk
+	TemporaryFileToUpload string // post-watermark, or just original if unwatermarked
 
 	webhookURL string
 
@@ -71,8 +76,10 @@ func NewUploader() *Uploader {
 }
 
 func (u *Uploader) AddFile(file string, conf config.Watcher) {
+	atomic.AddInt32(&currentId, 1)
 	thisUpload := Upload{
-		originalFilename: file,
+		Id:               currentId,
+		OriginalFilename: file,
 		watermark:        !conf.NoWatermark,
 		webhookURL:       conf.WebHookURL,
 		usernameOverride: conf.Username,
@@ -92,7 +99,7 @@ func (u *Uploader) Upload() {
 }
 
 func (u *Upload) processUpload() error {
-	daulog.SendLog(fmt.Sprintf("Uploading: %s", u.originalFilename), daulog.LogTypeInfo)
+	daulog.SendLog(fmt.Sprintf("Uploading: %s", u.OriginalFilename), daulog.LogTypeInfo)
 
 	if u.webhookURL == "" {
 		daulog.SendLog("WebHookURL is not configured - cannot upload!", daulog.LogTypeError)
@@ -103,7 +110,7 @@ func (u *Upload) processUpload() error {
 		daulog.SendLog("Watermarking image", daulog.LogTypeInfo)
 		u.applyWatermark()
 	} else {
-		u.filenameToUpload = u.originalFilename
+		u.TemporaryFileToUpload = u.OriginalFilename
 	}
 
 	extraParams := map[string]string{}
@@ -130,7 +137,7 @@ func (u *Upload) processUpload() error {
 	var retriesRemaining = 5
 	for retriesRemaining > 0 {
 
-		request, err := newfileUploadRequest(u.webhookURL, extraParams, "file", u.filenameToUpload)
+		request, err := newfileUploadRequest(u.webhookURL, extraParams, "file", u.TemporaryFileToUpload)
 		if err != nil {
 			log.Printf("error creating upload request: %s", err)
 			return fmt.Errorf("could not create upload request: %s", err)
@@ -216,8 +223,8 @@ func (u *Upload) processUpload() error {
 	}
 
 	if u.watermark {
-		daulog.SendLog(fmt.Sprintf("Removing temporary file: %s", u.filenameToUpload), daulog.LogTypeDebug)
-		os.Remove(u.filenameToUpload)
+		daulog.SendLog(fmt.Sprintf("Removing temporary file: %s", u.TemporaryFileToUpload), daulog.LogTypeDebug)
+		os.Remove(u.TemporaryFileToUpload)
 	}
 
 	if retriesRemaining == 0 {
@@ -261,7 +268,7 @@ func newfileUploadRequest(uri string, params map[string]string, paramName, path 
 
 func (u *Upload) applyWatermark() {
 
-	reader, err := os.Open(u.originalFilename)
+	reader, err := os.Open(u.OriginalFilename)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -271,7 +278,7 @@ func (u *Upload) applyWatermark() {
 	if err != nil {
 		daulog.SendLog(fmt.Sprintf("Cannot decode image: %v - skipping watermarking", err), daulog.LogTypeError)
 		u.watermark = false
-		u.filenameToUpload = u.originalFilename
+		u.TemporaryFileToUpload = u.OriginalFilename
 		return
 	}
 	bounds := im.Bounds()
@@ -302,7 +309,7 @@ func (u *Upload) applyWatermark() {
 	actualName := tempfile.Name() + ".png"
 
 	dc.SavePNG(actualName)
-	u.filenameToUpload = actualName
+	u.TemporaryFileToUpload = actualName
 }
 
 func sleepForRetries(retry int) {

@@ -43,7 +43,7 @@ func TestSuccessfulUpload(t *testing.T) {
 	// we will not really be uploading it here
 	f, _ := os.CreateTemp("", "dautest-upload-*")
 	defer os.Remove(f.Name())
-	u := Upload{webhookURL: "https://127.0.0.1/", originalFilename: f.Name()}
+	u := Upload{webhookURL: "https://127.0.0.1/", OriginalFilename: f.Name()}
 	u.Client = &MockClient{DoFunc: DoGoodUpload}
 	err := u.processUpload()
 	if err != nil {
@@ -62,7 +62,7 @@ func TestTooBigUpload(t *testing.T) {
 	// we will not really be uploading it here
 	f, _ := os.CreateTemp("", "dautest-upload-*")
 	defer os.Remove(f.Name())
-	u := Upload{webhookURL: "https://127.0.0.1/", originalFilename: f.Name()}
+	u := Upload{webhookURL: "https://127.0.0.1/", OriginalFilename: f.Name()}
 	u.Client = &MockClient{DoFunc: DoTooBigUpload}
 	err := u.processUpload()
 	if err == nil {
