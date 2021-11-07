@@ -83,7 +83,12 @@ func (u *Uploader) AddFile(file string, conf config.Watcher) {
 		watermark:        !conf.NoWatermark,
 		webhookURL:       conf.WebHookURL,
 		usernameOverride: conf.Username,
-		State:            StatePending,
+		State:            StateQueued,
+	}
+	// if the user wants uploads to be held for editing etc,
+	// set it to Pending instead
+	if conf.HoldUploads {
+		thisUpload.State = StatePending
 	}
 	u.Uploads = append(u.Uploads, &thisUpload)
 }

@@ -28,7 +28,6 @@ func (ip *Processor) ThumbPNG(ul *upload.Upload, w io.Writer) error {
 	}
 
 	newXY := image.Point{}
-	// test width
 	if im.Bounds().Max.X/thumbnailMaxX > im.Bounds().Max.Y/thumbnailMaxY {
 		newXY.X = thumbnailMaxX
 		newXY.Y = im.Bounds().Max.Y / (im.Bounds().Max.X / thumbnailMaxX)

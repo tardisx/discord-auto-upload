@@ -27,6 +27,7 @@ type Watcher struct {
 	Path        string
 	Username    string
 	NoWatermark bool
+	HoldUploads bool
 	Exclude     []string
 }
 
