@@ -1,0 +1,52 @@
+{{ define "content" }}
+
+<main role="main" class="" style="height:100%;" x-data="editor()" x-init="setup_canvas();">
+  <p>
+    <button type="button" @click="add_some_text()" class="btn btn-primary">Add text</button>
+    <button type="button" @click="export_image()" class="btn btn-primary">Take a dump</button>
+  </p>
+  <canvas id="c"></canvas>
+  <img :src="img_data">
+</main>
+
+{{ end }}
+
+{{ define "js" }}
+
+<script>
+
+function editor() {
+  return {
+    canvas: null, img_data: "", scaleFactor: 1.0,
+    setup_canvas() {
+      // seriously javascript? just imagine, in 2021....
+      var url = new URL(window.location);
+      var id = url.searchParams.get("id");
+      var self = this;
+      self.canvas = new fabric.Canvas('c');
+      
+      fabric.Image.fromURL('/rest/image/'+id, function(oImg) {
+        // self.canvas.setDimensions({width: oImg.width, height: oImg.height});
+        oImg.selectable = false;
+        
+        self.canvas.add(oImg);
+        // self.canvas.setHeight(self.canvas.getHeight() * (self.scaleFactor));
+        // self.canvas.setWidth(self.canvas.getWidth() * (self.scaleFactor));
+        // self.canvas.setZoom(self.scaleFactor);
+      });
+    },
+    export_image() {
+      this.img_data = this.canvas.toDataURL({multiplier: 1/this.scaleFactor});
+    },
+    add_some_text() {
+      var text = new fabric.Textbox('hello world', { left: 100, top: 100, fontSize: 20 });
+      this.canvas.add(text);
+    },
+
+  }
+}
+  
+</script>
+
+
+{{ end }}

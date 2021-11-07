@@ -22,7 +22,9 @@
               <button @click="start_upload(ul.id)" type="button" class="btn btn-primary">upload</button>
               <button @click="skip_upload(ul.id)" type="button" class="btn btn-primary">reject</button>
             </td>
-            <td><img :src="'/rest/image/'+ul.id+'/thumb'"></td>
+            <td>
+              <td><a x-bind:href="'/editor.html?id='+ul.id"><img x-bind:src="'/rest/image/'+ul.id+'/thumb'"></a></td>
+            </td>
           </tr>
         </template>
 
@@ -47,7 +49,9 @@
             <td>
               <button @click="start_upload(ul.id)" type="button" class="btn btn-primary">upload</button>
             </td>
-            <td><img :src="'/rest/image/'+ul.id+'/thumb'"></td>
+            <td>
+              <img :src="'/rest/image/'+ul.id+'/thumb'">
+            </td>
           </tr>
         </template>
 
@@ -70,7 +74,9 @@
          <tr>
            <td x-text="ul.original_file"></td>
            <td x-text="ul.state"></td>
-           <td><img :src="'/rest/image/'+ul.id+'/thumb'"></td>
+           <td>
+            <img :src="'/rest/image/'+ul.id+'/thumb'">
+          </td>
          </tr>
        </template>
 

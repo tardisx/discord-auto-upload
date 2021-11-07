@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
 	"mime"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -193,6 +195,30 @@ func (ws *WebService) imageThumb(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (ws *WebService) image(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	id, err := strconv.ParseInt(vars["id"], 10, 32)
+	if err != nil {
+		returnJSONError(w, "bad id")
+		return
+	}
+
+	ul := ws.Uploader.UploadById(int32(id))
+	if ul == nil {
+		returnJSONError(w, "bad id")
+		return
+	}
+
+	img, err := os.Open(ul.OriginalFilename)
+	if err != nil {
+		returnJSONError(w, "could not open image file")
+		return
+	}
+	defer img.Close()
+	io.Copy(w, img)
+}
+
 func (ws *WebService) modifyUpload(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -250,6 +276,7 @@ func (ws *WebService) StartWebServer() {
 	r.HandleFunc("/rest/upload/{id:[0-9]+}/{change}", ws.modifyUpload)
 
 	r.HandleFunc("/rest/image/{id:[0-9]+}/thumb", ws.imageThumb)
+	r.HandleFunc("/rest/image/{id:[0-9]+}", ws.image)
 
 	r.HandleFunc("/rest/config", ws.handleConfig)
 	r.PathPrefix("/").HandlerFunc(ws.getStatic)
