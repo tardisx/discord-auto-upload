@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Break upload page into pending/current/complete sections
+- Add preview thumbnails for each upload
+- Add feature to hold an image for upload, so the user can
+  choose to upload it or not
+
 ## [v0.11.2] - 2021-10-19
 
 - Really fix the bug where too large attachments keep retrying
