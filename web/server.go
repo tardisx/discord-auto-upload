@@ -16,6 +16,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/tardisx/discord-auto-upload/config"
+	"github.com/tardisx/discord-auto-upload/imageprocess"
 	daulog "github.com/tardisx/discord-auto-upload/log"
 	"github.com/tardisx/discord-auto-upload/upload"
 	"github.com/tardisx/discord-auto-upload/version"
@@ -168,6 +169,30 @@ func (ws *WebService) getUploads(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(text))
 }
 
+func (ws *WebService) imageThumb(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "image/png")
+	processor := imageprocess.Processor{}
+
+	vars := mux.Vars(r)
+	id, err := strconv.ParseInt(vars["id"], 10, 32)
+	if err != nil {
+		returnJSONError(w, "bad id")
+		return
+	}
+
+	ul := ws.Uploader.UploadById(int32(id))
+	if ul == nil {
+		returnJSONError(w, "bad id")
+		return
+	}
+	err = processor.ThumbPNG(ul, w)
+	if err != nil {
+		returnJSONError(w, "could not create thumb")
+		return
+	}
+}
+
 func (ws *WebService) modifyUpload(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -182,26 +207,28 @@ func (ws *WebService) modifyUpload(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		for _, anUpload := range ws.Uploader.Uploads {
-			if anUpload.Id == int32(id) {
-				if anUpload.State == upload.StatePending {
-					if change == "start" {
-						anUpload.State = upload.StateQueued
-						res := StartUploadResponse{Success: true, Message: "upload queued"}
-						resString, _ := json.Marshal(res)
-						w.Write(resString)
-						return
-					} else if change == "skip" {
-						anUpload.State = upload.StateSkipped
-						res := StartUploadResponse{Success: true, Message: "upload skipped"}
-						resString, _ := json.Marshal(res)
-						w.Write(resString)
-						return
-					} else {
-						returnJSONError(w, "bad change type")
-						return
-					}
-				}
+		anUpload := ws.Uploader.UploadById(int32(id))
+		if anUpload == nil {
+			returnJSONError(w, "bad id")
+			return
+		}
+
+		if anUpload.State == upload.StatePending {
+			if change == "start" {
+				anUpload.State = upload.StateQueued
+				res := StartUploadResponse{Success: true, Message: "upload queued"}
+				resString, _ := json.Marshal(res)
+				w.Write(resString)
+				return
+			} else if change == "skip" {
+				anUpload.State = upload.StateSkipped
+				res := StartUploadResponse{Success: true, Message: "upload skipped"}
+				resString, _ := json.Marshal(res)
+				w.Write(resString)
+				return
+			} else {
+				returnJSONError(w, "bad change type")
+				return
 			}
 		}
 		res := StartUploadResponse{Success: false, Message: "upload does not exist, or already queued"}
@@ -211,7 +238,6 @@ func (ws *WebService) modifyUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	returnJSONError(w, "bad request")
-	return
 
 }
 
@@ -222,6 +248,8 @@ func (ws *WebService) StartWebServer() {
 	r.HandleFunc("/rest/logs", ws.getLogs)
 	r.HandleFunc("/rest/uploads", ws.getUploads)
 	r.HandleFunc("/rest/upload/{id:[0-9]+}/{change}", ws.modifyUpload)
+
+	r.HandleFunc("/rest/image/{id:[0-9]+}/thumb", ws.imageThumb)
 
 	r.HandleFunc("/rest/config", ws.handleConfig)
 	r.PathPrefix("/").HandlerFunc(ws.getStatic)

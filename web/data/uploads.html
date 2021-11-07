@@ -11,6 +11,7 @@
        <tr>
          <th>filename</th>
          <th>actions</th>
+         <th>&nbsp;</th>
       </tr>
       </thead>
       <tbody>
@@ -20,8 +21,8 @@
             <td>
               <button @click="start_upload(ul.id)" type="button" class="btn btn-primary">upload</button>
               <button @click="skip_upload(ul.id)" type="button" class="btn btn-primary">reject</button>
-
             </td>
+            <td><img :src="'/rest/image/'+ul.id+'/thumb'"></td>
           </tr>
         </template>
 
@@ -35,6 +36,7 @@
         <tr>
           <th>filename</th>
           <th>actions</th>
+          <th>&nbsp;</th>
         </tr>
       </thead>
       <tbody>
@@ -45,6 +47,7 @@
             <td>
               <button @click="start_upload(ul.id)" type="button" class="btn btn-primary">upload</button>
             </td>
+            <td><img :src="'/rest/image/'+ul.id+'/thumb'"></td>
           </tr>
         </template>
 
@@ -58,6 +61,7 @@
        <tr>
          <th>filename</th>
          <th>state</th>
+         <th>&nbsp;</th>
        </tr>
      </thead>
      <tbody>
@@ -66,6 +70,7 @@
          <tr>
            <td x-text="ul.original_file"></td>
            <td x-text="ul.state"></td>
+           <td><img :src="'/rest/image/'+ul.id+'/thumb'"></td>
          </tr>
        </template>
 

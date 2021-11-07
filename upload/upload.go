@@ -98,6 +98,15 @@ func (u *Uploader) Upload() {
 	}
 }
 
+func (u *Uploader) UploadById(id int32) *Upload {
+	for _, anUpload := range u.Uploads {
+		if anUpload.Id == int32(id) {
+			return anUpload
+		}
+	}
+	return nil
+}
+
 func (u *Upload) processUpload() error {
 	daulog.SendLog(fmt.Sprintf("Uploading: %s", u.OriginalFilename), daulog.LogTypeInfo)
 
