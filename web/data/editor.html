@@ -1,11 +1,34 @@
 {{ define "content" }}
 
 <main role="main" class="" style="height:100%;" x-data="editor()" x-init="setup_canvas();">
-  <p>
+  <div id="tools-top" x-show="!toolbar">
     <button type="button" @click="add_some_text()" class="btn btn-primary">Add text</button>
-    <button type="button" @click="export_image()" class="btn btn-primary">Take a dump</button>
-  </p>
-  <canvas id="c"></canvas>
+    <button type="button" @click="crop()" class="btn btn-primary">Crop</button>
+    <button type="button" @click="crop()" class="btn btn-primary">Apply</button>
+  </div>
+  <div id="tools-colour" x-show="toolbar == 'text'">
+    <div>FG: 
+      <button type="button" @click="set_colour('#fff0', 'fg')" class="btn btn-primary" style="">-</button>
+
+      <template x-for="colour in colours">
+        <button type="button" @click="set_colour(colour, 'fg')" class="btn btn-primary" :style="'background-color: '+colour">&nbsp;</button>
+      </template>
+    </div>
+    <div>BG: 
+      <button type="button" @click="set_colour('#fff0', 'bg')" class="btn btn-primary" style="">-</button>
+      <template x-for="colour in colours">
+        <button type="button" @click="set_colour(colour, 'bg')" class="btn btn-primary" :style="'background-color: '+colour">&nbsp;</button>
+      </template>
+    </div>
+    <div>ST: 
+      <button type="button" @click="set_colour('#fff0', 'stroke')" class="btn btn-primary" style="">-</button>
+      <template x-for="colour in colours">
+        <button type="button" @click="set_colour(colour, 'stroke')" class="btn btn-primary" :style="'background-color: '+colour">&nbsp;</button>
+      </template>
+    </div>
+  </div>
+
+  <canvas id="c" width="600" height="600" x-bind:style="canvas_style"></canvas>
   <img :src="img_data">
 </main>
 
@@ -14,34 +37,75 @@
 {{ define "js" }}
 
 <script>
+// for some reason, canvas does not work correctly if the object 
+// is managed by alpine - see https://github.com/fabricjs/fabric.js/issues/7485
+var canvas = null;
 
 function editor() {
   return {
-    canvas: null, img_data: "", scaleFactor: 1.0,
+    img_data: "", scaleFactor: 1.0, 
+    toolbar: null,
+    colours: [ 'red', 'blue', 'green', 'white', 'yellow', 'black', 'purple'],
+
+    canvas_style: "",
+    // "position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; touch-action: none; -webkit-user-select: none;",
     setup_canvas() {
       // seriously javascript? just imagine, in 2021....
       var url = new URL(window.location);
       var id = url.searchParams.get("id");
       var self = this;
-      self.canvas = new fabric.Canvas('c');
+      canvas = new fabric.Canvas('c');
+
+      canvas.on('selection:cleared', function(options) {
+        self.toolbar = null;
+      });
       
       fabric.Image.fromURL('/rest/image/'+id, function(oImg) {
-        // self.canvas.setDimensions({width: oImg.width, height: oImg.height});
+        canvas.setDimensions({width: oImg.width, height: oImg.height});
         oImg.selectable = false;
-        
-        self.canvas.add(oImg);
+        canvas.add(oImg);
         // self.canvas.setHeight(self.canvas.getHeight() * (self.scaleFactor));
         // self.canvas.setWidth(self.canvas.getWidth() * (self.scaleFactor));
         // self.canvas.setZoom(self.scaleFactor);
       });
     },
     export_image() {
-      this.img_data = this.canvas.toDataURL({multiplier: 1/this.scaleFactor});
+      this.img_data = canvas.toDataURL({multiplier: 1/this.scaleFactor});
     },
     add_some_text() {
-      var text = new fabric.Textbox('hello world', { left: 100, top: 100, fontSize: 20 });
-      this.canvas.add(text);
+      var text = new fabric.Textbox('double click to change', { left: 20, top: 20, width: 300, fontSize: 40 });
+      canvas.add(text);
+      canvas.setActiveObject(text);
+      this.toolbar = 'text';
+      var self = this;
+      text.on('selected', function(options) {
+        self.toolbar = 'text';
+      });
     },
+    set_colour(colour, type) {
+      selected = canvas.getActiveObjects();
+      console.log();
+      selected.forEach(el => {
+        if (type === 'fg') {
+          el.set('fill', colour);
+        }
+        if (type === 'bg') {
+          el.set('textBackgroundColor', colour);
+        }
+        if (type === 'stroke') {
+          el.set('stroke', colour);
+        }
+
+//["stroke","strokeWidth","fill","fontFamily","fontSize","fontWeight","fontStyle","underline","overline","linethrough","deltaY","textBackgroundColor"]
+
+
+      });
+      canvas.renderAll();
+    }
+    
+//    selection:cleared
+
+
 
   }
 }
