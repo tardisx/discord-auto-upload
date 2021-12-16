@@ -7,25 +7,43 @@
     <button type="button" @click="crop()" class="btn btn-primary">Apply</button>
   </div>
   <div id="tools-colour" x-show="toolbar == 'text'">
-    <div>FG: 
-      <button type="button" @click="set_colour('#fff0', 'fg')" class="btn btn-primary" style="">-</button>
+    <table>
+      <tr>
+        <th>foreground</th>
+        <template x-for="colour in colours">
+          <td>
+            <button type="button" @click="set_colour(colour, 'fg')" class="btn btn-primary" :style="'background-color: '+colour">&nbsp;</button>
+          </td>
+        </template>
+        <td>
+          <button type="button" @click="set_colour('#fff0', 'fg')" class="btn btn-primary" style="">-</button>
+        </td>
+      </tr>
 
-      <template x-for="colour in colours">
-        <button type="button" @click="set_colour(colour, 'fg')" class="btn btn-primary" :style="'background-color: '+colour">&nbsp;</button>
-      </template>
-    </div>
-    <div>BG: 
-      <button type="button" @click="set_colour('#fff0', 'bg')" class="btn btn-primary" style="">-</button>
-      <template x-for="colour in colours">
-        <button type="button" @click="set_colour(colour, 'bg')" class="btn btn-primary" :style="'background-color: '+colour">&nbsp;</button>
-      </template>
-    </div>
-    <div>ST: 
-      <button type="button" @click="set_colour('#fff0', 'stroke')" class="btn btn-primary" style="">-</button>
-      <template x-for="colour in colours">
-        <button type="button" @click="set_colour(colour, 'stroke')" class="btn btn-primary" :style="'background-color: '+colour">&nbsp;</button>
-      </template>
-    </div>
+      <tr>
+        <th>background</th>
+        <template x-for="colour in colours">
+          <td>
+            <button type="button" @click="set_colour(colour, 'bg')" class="btn btn-primary" :style="'background-color: '+colour">&nbsp;</button>
+          </td>
+        </template>
+        <td>
+          <button type="button" @click="set_colour('#fff0', 'bg')" class="btn btn-primary" style="">-</button>
+        </td>
+      </tr>
+
+      <tr>
+        <th>outline</th>
+        <template x-for="colour in colours">
+          <td>
+            <button type="button" @click="set_colour(colour, 'stroke')" class="btn btn-primary" :style="'background-color: '+colour">&nbsp;</button>
+          </td>
+        </template>
+        <td>
+          <button type="button" @click="set_colour('#fff0', 'stroke')" class="btn btn-primary" style="">-</button>
+        </td>
+      </tr>
+    </table>
   </div>
 
   <canvas id="c" width="600" height="600" x-bind:style="canvas_style"></canvas>
