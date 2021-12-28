@@ -1,6 +1,6 @@
 {{ define "content" }}
 
-<main role="main" class="" stylse="height:100%;" x-data="editor()" x-init="setup_canvas();">
+<main role="main" class=""  x-data="editor()" x-init="setup_canvas();">
   <div class="row">
     <div class="col">
       <canvas id="c" x-bind:style="canvas_style">
@@ -11,7 +11,7 @@
       <div id="tools-top" x-show="!toolbar">
         <button type="button" @click="add_some_text()" class="btn btn-primary">Add text</button>
         <button type="button" @click="crop()" class="btn btn-primary">Crop</button>
-        <button type="button" @click="crop()" class="btn btn-primary">Apply</button>
+        <button type="button" @click="apply()" class="btn btn-primary">Apply</button>
       </div>
       <div id="tools-delete" x-show="toolbar == 'text'">
         <button type="button" @click="delete_selected();" class="btn btn-primary" style="">delete</button>
@@ -137,6 +137,19 @@ function editor() {
 
       });
       canvas.renderAll();
+    },
+    apply() {
+      image_data = canvas.toDataURL('png');
+      let formData = new FormData();
+      formData.append('image', image_data);
+      var url = new URL(window.location);
+      var id = url.searchParams.get("id");
+      fetch('/rest/upload/'+id+'/markup', {method: 'POST', body: formData})
+          .then(response => response.json())  // convert to json
+          .then(json => {
+            console.log(json);
+          })
+
     }
     
 //    selection:cleared

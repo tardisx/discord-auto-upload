@@ -2,6 +2,7 @@ package web
 
 import (
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -252,6 +253,23 @@ func (ws *WebService) modifyUpload(w http.ResponseWriter, r *http.Request) {
 				resString, _ := json.Marshal(res)
 				w.Write(resString)
 				return
+			} else if change == "markup" {
+				newImageData := r.FormValue("image")
+				//data:image/png;base64,xxxx
+				// I know this is dumb, we should just send binary image data, but I can't
+				// see that Fabric makes that possible.
+				if strings.Index(newImageData, "data:image/png;base64,") != 0 {
+					returnJSONError(w, "bad image data")
+					return
+				}
+				imageDataBase64 := newImageData[22:]
+				b, err := base64.StdEncoding.DecodeString(imageDataBase64)
+				if err != nil {
+					returnJSONError(w, err.Error())
+					return
+				}
+				fmt.Printf("YAY %v", b)
+
 			} else {
 				returnJSONError(w, "bad change type")
 				return

@@ -50,6 +50,7 @@ type Upload struct {
 	UploadedAt time.Time `json:"uploaded_at"`
 
 	OriginalFilename      string `json:"original_file"` // path on the local disk
+	MarkedUpFilename      string `json:"markedup_file"` // a temporary file, if the user did some markup
 	TemporaryFileToUpload string // post-watermark, or just original if unwatermarked
 
 	webhookURL string
