@@ -14,6 +14,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -120,6 +121,8 @@ func (u *Upload) RemoveMarkupTempFile() {
 func (u *Upload) processUpload() error {
 	daulog.SendLog(fmt.Sprintf("Uploading: %s", u.OriginalFilename), daulog.LogTypeInfo)
 
+	baseFilename := filepath.Base(u.OriginalFilename)
+
 	if u.webhookURL == "" {
 		daulog.SendLog("WebHookURL is not configured - cannot upload!", daulog.LogTypeError)
 		return errors.New("webhook url not configured")
@@ -184,7 +187,7 @@ func (u *Upload) processUpload() error {
 			imageData = filedata
 		}
 
-		request, err := newfileUploadRequest(u.webhookURL, extraParams, "file", "pikachu.png", imageData)
+		request, err := newfileUploadRequest(u.webhookURL, extraParams, "file", baseFilename, imageData)
 		if err != nil {
 			log.Printf("error creating upload request: %s", err)
 			return fmt.Errorf("could not create upload request: %s", err)
