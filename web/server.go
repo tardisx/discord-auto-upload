@@ -273,6 +273,7 @@ func (ws *WebService) modifyUpload(w http.ResponseWriter, r *http.Request) {
 				return
 			} else if change == "skip" {
 				anUpload.State = upload.StateSkipped
+				anUpload.RemoveMarkupTempFile()
 				res := StartUploadResponse{Success: true, Message: "upload skipped"}
 				resString, _ := json.Marshal(res)
 				w.Write(resString)

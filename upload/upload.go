@@ -111,6 +111,12 @@ func (u *Uploader) UploadById(id int32) *Upload {
 	return nil
 }
 
+func (u *Upload) RemoveMarkupTempFile() {
+	if len(u.MarkedUpFilename) > 0 {
+		os.Remove(u.MarkedUpFilename)
+	}
+}
+
 func (u *Upload) processUpload() error {
 	daulog.SendLog(fmt.Sprintf("Uploading: %s", u.OriginalFilename), daulog.LogTypeInfo)
 
@@ -264,9 +270,7 @@ func (u *Upload) processUpload() error {
 	}
 
 	// remove any marked up file
-	if len(u.MarkedUpFilename) > 0 {
-		os.Remove(u.MarkedUpFilename)
-	}
+	u.RemoveMarkupTempFile()
 
 	if retriesRemaining == 0 {
 		daulog.SendLog("Failed to upload, even after all retries", daulog.LogTypeError)
