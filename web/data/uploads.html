@@ -23,7 +23,8 @@
               <button @click="skip_upload(ul.id)" type="button" class="btn btn-primary">reject</button>
             </td>
             <td>
-              <td><a x-bind:href="'/editor.html?id='+ul.id"><img x-bind:src="'/rest/image/'+ul.id+'/thumb'"></a></td>
+              <a x-bind:href="'/editor.html?id='+ul.id"><img x-bind:src="'/rest/image/'+ul.id+'/thumb'"></a>
+              <a x-show="ul.markedup_file" x-bind:href="'/editor.html?id='+ul.id"><img x-bind:src="'/rest/image/'+ul.id+'/markedup_thumb'"></a>
             </td>
           </tr>
         </template>

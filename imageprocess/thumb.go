@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/png"
 	"io"
+	"log"
 	"os"
 
 	"github.com/tardisx/discord-auto-upload/upload"
@@ -16,8 +17,18 @@ const (
 	thumbnailMaxY = 128
 )
 
-func (ip *Processor) ThumbPNG(ul *upload.Upload, w io.Writer) error {
-	file, err := os.Open(ul.OriginalFilename)
+func (ip *Processor) ThumbPNG(ul *upload.Upload, which string, w io.Writer) error {
+
+	var filename string
+	if which == "orig" {
+		filename = ul.OriginalFilename
+	} else if which == "markedup" {
+		filename = ul.MarkedUpFilename
+	} else {
+		log.Fatal("was passed incorrect 'which' arg")
+	}
+
+	file, err := os.Open(filename)
 	if err != nil {
 		return fmt.Errorf("could not open file: %s", err)
 	}

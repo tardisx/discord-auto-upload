@@ -189,7 +189,31 @@ func (ws *WebService) imageThumb(w http.ResponseWriter, r *http.Request) {
 		returnJSONError(w, "bad id")
 		return
 	}
-	err = processor.ThumbPNG(ul, w)
+	err = processor.ThumbPNG(ul, "orig", w)
+	if err != nil {
+		returnJSONError(w, "could not create thumb")
+		return
+	}
+}
+
+func (ws *WebService) imageMarkedupThumb(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "image/png")
+	processor := imageprocess.Processor{}
+
+	vars := mux.Vars(r)
+	id, err := strconv.ParseInt(vars["id"], 10, 32)
+	if err != nil {
+		returnJSONError(w, "bad id")
+		return
+	}
+
+	ul := ws.Uploader.UploadById(int32(id))
+	if ul == nil {
+		returnJSONError(w, "bad id")
+		return
+	}
+	err = processor.ThumbPNG(ul, "markedup", w)
 	if err != nil {
 		returnJSONError(w, "could not create thumb")
 		return
@@ -268,7 +292,22 @@ func (ws *WebService) modifyUpload(w http.ResponseWriter, r *http.Request) {
 					returnJSONError(w, err.Error())
 					return
 				}
-				fmt.Printf("YAY %v", b)
+
+				// write to a temporary file
+				tempfile, err := ioutil.TempFile("", "dau_markup")
+				if err != nil {
+					log.Fatal(err)
+				}
+				n, err := tempfile.Write(b)
+				if n != len(b) {
+					log.Fatalf("only wrote %d bytes??", n)
+				}
+				if err != nil {
+					log.Fatalf("Could not write temp file: %v", err)
+				}
+
+				tempfile.Close()
+				anUpload.MarkedUpFilename = tempfile.Name()
 
 			} else {
 				returnJSONError(w, "bad change type")
@@ -294,6 +333,8 @@ func (ws *WebService) StartWebServer() {
 	r.HandleFunc("/rest/upload/{id:[0-9]+}/{change}", ws.modifyUpload)
 
 	r.HandleFunc("/rest/image/{id:[0-9]+}/thumb", ws.imageThumb)
+	r.HandleFunc("/rest/image/{id:[0-9]+}/markedup_thumb", ws.imageMarkedupThumb)
+
 	r.HandleFunc("/rest/image/{id:[0-9]+}", ws.image)
 
 	r.HandleFunc("/rest/config", ws.handleConfig)
