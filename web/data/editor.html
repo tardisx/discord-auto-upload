@@ -12,9 +12,13 @@
         <button type="button" @click="add_some_text()" class="btn btn-primary">Add text</button>
         <button type="button" @click="crop()" class="btn btn-primary">Crop</button>
         <button type="button" @click="apply()" class="btn btn-primary">Apply</button>
+        <button type="button" @click="cancel()" class="btn btn-primary">Cancel</button>
       </div>
       <div id="tools-delete" x-show="toolbar == 'text'">
         <button type="button" @click="delete_selected();" class="btn btn-primary" style="">delete</button>
+      </div>
+      <div id="tools-crop" x-show="toolbar == 'crop'">
+        <button type="button" @click="apply_crop();" class="btn btn-primary" style="">crop</button>
       </div>
       <div id="tools-colour" x-show="toolbar == 'text'">
         <table>
@@ -72,7 +76,7 @@ var canvas = null;
 
 function editor() {
   return {
-    img_data: "", scaleFactor: 1.0, 
+    img_data: "", scaleFactor: 0.5, 
     toolbar: null,
     colours: [ 'red', 'blue', 'green', 'white', 'yellow', 'black', 'purple'],
 
@@ -90,12 +94,13 @@ function editor() {
       });
       
       fabric.Image.fromURL('/rest/image/'+id, function(oImg) {
+        // TODO set scalefactor appropriately
         canvas.setDimensions({width: oImg.width, height: oImg.height});
         oImg.selectable = false;
         canvas.add(oImg);
-        // self.canvas.setHeight(self.canvas.getHeight() * (self.scaleFactor));
-        // self.canvas.setWidth(self.canvas.getWidth() * (self.scaleFactor));
-        // self.canvas.setZoom(self.scaleFactor);
+        canvas.setHeight(canvas.getHeight() * (self.scaleFactor));
+        canvas.setWidth(canvas.getWidth() * (self.scaleFactor));
+        canvas.setZoom(self.scaleFactor);
       });
     },
     export_image() {
@@ -138,8 +143,16 @@ function editor() {
       });
       canvas.renderAll();
     },
+
+    // crop mode
+    crop() {
+
+    },
     apply() {
-      image_data = canvas.toDataURL('png');
+ 
+      image_data = canvas.toDataURL({
+        format: 'png',
+        multiplier: 1.0/this.scaleFactor});
       let formData = new FormData();
       formData.append('image', image_data);
       var url = new URL(window.location);
@@ -151,9 +164,10 @@ function editor() {
             window.location = '/uploads.html';
           })
 
-    }
-    
-//    selection:cleared
+    },
+    cancel() {
+      window.location = '/uploads.html';
+    },
 
 
 
