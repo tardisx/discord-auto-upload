@@ -94,7 +94,7 @@ function editor() {
       });
       
       fabric.Image.fromURL('/rest/image/'+id, function(oImg) {
-        // TODO set scalefactor appropriately
+        self.scaleFactor = scalefactor(oImg.width, oImg.height);
         canvas.setDimensions({width: oImg.width, height: oImg.height});
         oImg.selectable = false;
         canvas.add(oImg);
@@ -172,6 +172,22 @@ function editor() {
 
 
   }
+}
+
+function scalefactor(width, height) {
+  max_width = 800;
+  max_height = 600;
+
+  if (width <= max_width && height <= max_height) {
+    return 1.0;
+  }
+
+  factor = max_width/width;
+  if (height*factor <= max_height) {
+    return factor;
+  }
+
+  return height/max_height;
 }
   
 </script>
