@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.12.0] - 2020-04-03
+
 - Break upload page into pending/current/complete sections
 - Add preview thumbnails for each upload
 - Add feature to hold an image for upload, so the user can
