@@ -43,39 +43,51 @@ Thus, you do not have to worry about pointing `dau` at a directory full of image
 
 ## Configuration options
 
-See the web interface at http://localhost:9090 to configure `dau`.
+See the web interface at http://localhost:9090 to configure `dau`. The configuration is a single page of options,
+no changes will take effect until the "Save All Configuration" button has been pressed.
 
-### 'Discord WebHook URL'
+### Global options
 
-The webhook URL from Discord. See https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks
-for more information on setting one up.
+* Server port - the port number the web server listens on. Requires restart
+* Watch interval - how often each watcher will check the directory for new files
 
-### 'Bot Username'
+### Watcher configuration
 
-This is completely optional and can be any arbitrary string. It makes the upload
+There can be one or more watchers configured. Each watcher looks in a particular directory,
+and uploads new files to a different discord channel.
+
+Each watcher has the following configuration options:
+
+* Directory to watch - This is the path that `dau` will periodically inspect, looking for new images.
+Note that subdirectories are also scanned. You need to enter the full filesystem path here.
+* Discord WebHook URL - The webhook URL from Discord. See https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks for more information on setting one up.
+* Username - This is completely optional and can be any arbitrary string. It makes the upload
 appear to come from a different user (though this is visual only, and does not
 actually hide the bot identity in any way). You might like to set it to your own
 discord name.
+* Watermark - Disabling the watermark will prevent `dau` from putting a link to the projects
+on the bottom left hand corner of your uploaded images. I really appreciate it when you leave this enabled :-)
+* Hold Uploads - See "Holding uploads" below
+* Exclusions - You can set one or more arbitrary strings to exclude files from being matched by this watcher.
+This is most commonly used to prevent thumbnail images from being uploads.
 
-### 'Directory to watch'
+## Holding uploads
 
-This is the path that `dau` will periodically inspect, looking for new images.
-Note that subdirectories are also scanned. You need to enter the full filesystem
-path here.
+If the "Hold Uploads" option is selected, newly found files will not immediately be uploaded. They will be available
+in the "uploads" tab of the web interface. This has two purposes:
 
-### 'Period between filesystem checks'
+* It gives you a chance to vet your screenshot selection before uploading
+* It allows you to edit the images before uploading.
 
-This is the number of seconds between which `dau` will look for new images.
+In the list of uploads there are three actions you can take on each file:
 
-### 'Do not watermark images'
+* Press "upload" to upload the image
+* Press "reject" to reject the image
+* Click on the image thumbnail to edit the image
 
-This will disable the watermarking of images. I like it when you don't set this :-)
-
-### 'Files to exclude'
-
-This is a string to match against the filename to check for exclusions. The common
-use case is to use 'thumbnail' or similar if your image directory contains additional
-thumbnail files.
+If you click on the image thumbnail, an image editor will open, and allow you to add text captions to your image.
+More functionality is coming soon. When you are finished editing, choose "Apply" and you will return to the uploads
+list. Click "upload" to upload your edited image.
 
 ## Limitations/bugs
 
