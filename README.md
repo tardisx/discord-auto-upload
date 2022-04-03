@@ -8,6 +8,8 @@ This program automatically uploads new screenshots that appear in a folder on yo
 
 Point it at your Steam screenshot folder, or similar, and shortly after you hit your screenshot hotkey the screenshot will appear in your discord chat.
 
+Need help? Join our discord: https://discord.gg/eErG9sntbZ
+
 ## What you'll need
 
 * A folder where screenshots are stored

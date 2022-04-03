@@ -10,7 +10,7 @@
     <div class="col">
       <div id="tools-top" x-show="!toolbar">
         <button type="button" @click="add_some_text()" class="btn btn-primary">Add text</button>
-        <button type="button" @click="crop()" class="btn btn-primary">Crop</button>
+        <!-- <button type="button" @click="crop()" class="btn btn-primary">Crop</button> -->
         <button type="button" @click="apply()" class="btn btn-primary">Apply</button>
         <button type="button" @click="cancel()" class="btn btn-primary">Cancel</button>
       </div>
@@ -19,6 +19,7 @@
       </div>
       <div id="tools-crop" x-show="toolbar == 'crop'">
         <button type="button" @click="apply_crop();" class="btn btn-primary" style="">crop</button>
+        <button type="button" @click="cancel_crop();" class="btn btn-primary" style="">cancel</button>
       </div>
       <div id="tools-colour" x-show="toolbar == 'text'">
         <table>
@@ -78,6 +79,7 @@ function editor() {
   return {
     img_data: "", scaleFactor: 0.5, 
     toolbar: null,
+    crop_state: {},
     colours: [ 'red', 'blue', 'green', 'white', 'yellow', 'black', 'purple'],
 
     canvas_style: "",
@@ -137,16 +139,55 @@ function editor() {
           el.set('stroke', colour);
         }
 
-//["stroke","strokeWidth","fill","fontFamily","fontSize","fontWeight","fontStyle","underline","overline","linethrough","deltaY","textBackgroundColor"]
-
-
       });
       canvas.renderAll();
     },
 
-    // crop mode
+    // crop mode - XXX not yet implemented
     crop() {
-
+      this.toolbar = 'crop';
+      this.crop_state = {};
+      canvas.selection = false; // disable drag drop selection so we can see the crop rect
+      let self = this;
+      this.crop_state.rectangle = new fabric.Rect({
+        fill: 'transparent',
+        stroke: '#ccc',
+        strokeDashArray: [2, 2],
+        visible: false
+      });
+      console.log(this.crop_state.rectangle);
+      var container = document.getElementById('c').getBoundingClientRect();
+      canvas.add(this.crop_state.rectangle);
+      canvas.on("mouse:down", function(event) {
+        if(1) {
+          console.log('wow mouse is down', event.e);
+          self.crop_state.rectangle.width = 2;
+          self.crop_state.rectangle.height = 2;
+          self.crop_state.rectangle.left = event.e.offsetX / self.scaleFactor;
+          self.crop_state.rectangle.top = event.e.offsetY / self.scaleFactor;
+          self.crop_state.rectangle.visible = true;
+          self.crop_state.mouseDown = event.e;
+          canvas.bringToFront(self.crop_state.rectangle);
+        }
+      });
+      // draw the rectangle as the mouse is moved after a down click
+      canvas.on("mouse:move", function(event) {
+        if(self.crop_state.mouseDown && 1) {
+          
+          self.crop_state.rectangle.width  = event.e.offsetX / self.scaleFactor - self.crop_state.rectangle.left;
+          self.crop_state.rectangle.height = event.e.offsetY / self.scaleFactor - self.crop_state.rectangle.top;
+          canvas.renderAll();
+          
+        }
+      });
+      // when mouse click is released, end cropping mode
+      canvas.on("mouse:up", function() {
+        console.log('MOUSE UP');
+        self.crop_state.mouseDown = null;
+      });
+    },
+    apply_crop() {
+      console.log(this.crop_state.rectangle.width);
     },
     apply() {
  
@@ -163,14 +204,10 @@ function editor() {
             console.log(json);
             window.location = '/uploads.html';
           })
-
     },
     cancel() {
       window.location = '/uploads.html';
     },
-
-
-
   }
 }
 

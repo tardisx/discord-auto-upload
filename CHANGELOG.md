@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 - Add preview thumbnails for each upload
 - Add feature to hold an image for upload, so the user can
   choose to upload it or not
+- Add simple image editor to add text captions
+- Discord server created: https://discord.gg/eErG9sntbZ
 
 ## [v0.11.2] - 2021-10-19
 
