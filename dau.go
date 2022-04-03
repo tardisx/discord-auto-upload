@@ -2,13 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -54,7 +51,17 @@ func main() {
 	web := web.WebService{Config: config, Uploader: up}
 	web.StartWebServer()
 
-	go func() { checkUpdates() }()
+	go func() {
+		version.GetOnlineVersion()
+		if version.UpdateAvailable() {
+			fmt.Printf("You are currently on version %s, but version %s is available\n", version.CurrentVersion, version.LatestVersionInfo.TagName)
+			fmt.Println("----------- Release Info -----------")
+			fmt.Println(version.LatestVersionInfo.Body)
+			fmt.Println("------------------------------------")
+			fmt.Println("Upgrade at https://github.com/tardisx/discord-auto-upload/releases/latest")
+			daulog.SendLog(fmt.Sprintf("New version available: %s - download at https://github.com/tardisx/discord-auto-upload/releases/latest", version.LatestVersionInfo.TagName), daulog.LogTypeInfo)
+		}
+	}()
 
 	// create the watchers, restart them if config changes
 	// blocks forever
@@ -167,51 +174,6 @@ func (w *watch) checkFile(path string, found *[]string, exclusions []string) err
 	}
 
 	return nil
-}
-
-func checkUpdates() {
-
-	type GithubRelease struct {
-		HTMLURL string `json:"html_url"`
-		TagName string `json:"tag_name"`
-		Name    string `json:"name"`
-		Body    string `json:"body"`
-	}
-
-	daulog.SendLog("checking for new version", daulog.LogTypeInfo)
-
-	client := &http.Client{Timeout: time.Second * 5}
-	resp, err := client.Get("https://api.github.com/repos/tardisx/discord-auto-upload/releases/latest")
-	if err != nil {
-		daulog.SendLog(fmt.Sprintf("WARNING: Update check failed: %v", err), daulog.LogTypeError)
-		return
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal("could not check read update response")
-	}
-
-	var latest GithubRelease
-	err = json.Unmarshal(body, &latest)
-
-	if err != nil {
-		log.Fatal("could not parse JSON: ", err)
-	}
-
-	// pre v0.11.0 version (ie before semver) did a simple string comparison,
-	// but since "0.10.0" < "v0.11.0" they should still get prompted to upgrade
-	// ok
-	if version.NewVersionAvailable(latest.TagName) {
-		fmt.Printf("You are currently on version %s, but version %s is available\n", version.CurrentVersion, latest.TagName)
-		fmt.Println("----------- Release Info -----------")
-		fmt.Println(latest.Body)
-		fmt.Println("------------------------------------")
-		fmt.Println("Upgrade at https://github.com/tardisx/discord-auto-upload/releases/latest")
-		daulog.SendLog(fmt.Sprintf("New version available: %s - download at https://github.com/tardisx/discord-auto-upload/releases/latest", latest.TagName), daulog.LogTypeInfo)
-	}
-
-	daulog.SendLog("already running latest version", daulog.LogTypeInfo)
 }
 
 func parseOptions() {

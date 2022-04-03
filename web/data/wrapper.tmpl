@@ -42,6 +42,10 @@
        <a class="nav-link {{ if eq .Path "config.html"}} active {{ end }}" href="/config.html">Config</a>
        <a class="nav-link {{ if eq .Path "uploads.html"}} active {{ end }}" href="/uploads.html">Uploads</a>
        <a class="nav-link {{ if eq .Path "logs.html"}} active {{ end }}" href="/logs.html">Logs</a>
+       {{ if eq .NewVersionAvailable true }}
+       <a class="nav-link" href="{{ .NewVersionInfo.HTMLURL }}">Ver {{ .NewVersionInfo.TagName }} available!</a>
+       {{ end }}
+
      </nav>
    </div>
  </header>

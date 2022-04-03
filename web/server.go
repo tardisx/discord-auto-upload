@@ -74,12 +74,16 @@ func (ws *WebService) getStatic(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var b struct {
-			Body    string
-			Path    string
-			Version string
+			Body                string
+			Path                string
+			Version             string
+			NewVersionAvailable bool
+			NewVersionInfo      version.GithubRelease
 		}
 		b.Path = path
 		b.Version = version.CurrentVersion
+		b.NewVersionAvailable = version.UpdateAvailable()
+		b.NewVersionInfo = version.LatestVersionInfo
 
 		err = t.ExecuteTemplate(w, "layout", b)
 		if err != nil {

@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Show if a new version is available in the web interface
+
 ## [v0.12.0] - 2020-04-03
 
 - Break upload page into pending/current/complete sections

@@ -4,8 +4,18 @@ import (
 	"testing"
 )
 
-func TestVersioning(t *testing.T) {
-	if !NewVersionAvailable("v1.0.0") {
-		t.Error("should be a version newer than v1.0.0")
+func TestVersioningUpdate(t *testing.T) {
+	// pretend there is a new version
+	LatestVersion = "v0.13.0"
+	if !UpdateAvailable() {
+		t.Error("should be a version newer than " + CurrentVersion)
+	}
+}
+
+func TestVersioningNoUpdate(t *testing.T) {
+	// pretend there is a new version
+	LatestVersion = "v0.12.1"
+	if UpdateAvailable() {
+		t.Error("should NOT be a version newer than " + CurrentVersion)
 	}
 }
