@@ -1,9 +1,13 @@
 package log
 
 import (
-	"log"
+	"fmt"
 	"time"
 )
+
+type Logger interface {
+	WriteEntry(l LogEntry)
+}
 
 type LogEntryType string
 
@@ -19,28 +23,73 @@ const (
 	LogTypeDebug = "debug"
 )
 
-var LogEntries []LogEntry
+var loggers []Logger
 var logInput chan LogEntry
+var Memory *MemoryLogger
 
 func init() {
+
+	// create some loggers
+	Memory = &MemoryLogger{maxsize: 100}
+	stdout := &StdoutLogger{}
+
+	loggers = []Logger{Memory, stdout}
+
 	// wait for log entries
 	logInput = make(chan LogEntry)
 	go func() {
 		for {
 			aLog := <-logInput
-			LogEntries = append(LogEntries, aLog)
-			for len(LogEntries) > 100 {
-				LogEntries = LogEntries[1:]
+			for _, l := range loggers {
+				l.WriteEntry(aLog)
 			}
 		}
 	}()
 }
 
-func SendLog(entry string, entryType LogEntryType) {
+func Debug(entry string) {
 	logInput <- LogEntry{
 		Timestamp: time.Now(),
 		Entry:     entry,
-		Type:      entryType,
+		Type:      LogTypeDebug,
 	}
-	log.Printf("%6s: %s", entryType, entry)
+}
+func Debugf(entry string, args ...interface{}) {
+	logInput <- LogEntry{
+		Timestamp: time.Now(),
+		Entry:     fmt.Sprintf(entry, args...),
+		Type:      LogTypeDebug,
+	}
+}
+
+func Info(entry string) {
+	logInput <- LogEntry{
+		Timestamp: time.Now(),
+		Entry:     entry,
+		Type:      LogTypeInfo,
+	}
+}
+
+func Infof(entry string, args ...interface{}) {
+	logInput <- LogEntry{
+		Timestamp: time.Now(),
+		Entry:     fmt.Sprintf(entry, args...),
+		Type:      LogTypeInfo,
+	}
+}
+
+func Error(entry string) {
+	logInput <- LogEntry{
+		Timestamp: time.Now(),
+		Entry:     entry,
+		Type:      LogTypeError,
+	}
+}
+
+func Errorf(entry string, args ...interface{}) {
+	logInput <- LogEntry{
+		Timestamp: time.Now(),
+		Entry:     fmt.Sprintf(entry, args...),
+		Type:      LogTypeError,
+	}
 }

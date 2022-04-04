@@ -66,7 +66,7 @@ func (ws *WebService) getStatic(w http.ResponseWriter, r *http.Request) {
 
 		t, err := template.ParseFS(webFS, "data/wrapper.tmpl", "data/"+path)
 		if err != nil {
-			daulog.SendLog(fmt.Sprintf("when fetching: %s got: %s", path, err), daulog.LogTypeError)
+			daulog.Errorf("when fetching: %s got: %s", path, err)
 			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("not found"))
@@ -94,7 +94,7 @@ func (ws *WebService) getStatic(w http.ResponseWriter, r *http.Request) {
 		otherStatic, err := webFS.ReadFile("data/" + path)
 
 		if err != nil {
-			daulog.SendLog(fmt.Sprintf("when fetching: %s got: %s", path, err), daulog.LogTypeError)
+			daulog.Errorf("when fetching: %s got: %s", path, err)
 			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte("not found"))
@@ -118,7 +118,7 @@ func (ws *WebService) getLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	text := ""
-	for _, log := range daulog.LogEntries {
+	for _, log := range daulog.Memory.Entries() {
 		if !showDebug && log.Type == daulog.LogTypeDebug {
 			continue
 		}
@@ -127,7 +127,6 @@ func (ws *WebService) getLogs(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	//	js, _ := json.Marshal(daulog.LogEntries)
 	w.Write([]byte(text))
 }
 
@@ -347,12 +346,11 @@ func (ws *WebService) StartWebServer() {
 
 	go func() {
 		listen := fmt.Sprintf(":%d", ws.Config.Config.Port)
-		log.Printf("Starting web server on http://localhost%s", listen)
+		daulog.Infof("Starting web server on http://localhost%s", listen)
 
 		srv := &http.Server{
-			Handler: r,
-			Addr:    listen,
-			// Good practice: enforce timeouts for servers you create!
+			Handler:      r,
+			Addr:         listen,
 			WriteTimeout: 15 * time.Second,
 			ReadTimeout:  15 * time.Second,
 		}

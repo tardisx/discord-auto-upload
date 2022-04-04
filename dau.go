@@ -54,12 +54,12 @@ func main() {
 	go func() {
 		version.GetOnlineVersion()
 		if version.UpdateAvailable() {
-			fmt.Printf("You are currently on version %s, but version %s is available\n", version.CurrentVersion, version.LatestVersionInfo.TagName)
-			fmt.Println("----------- Release Info -----------")
-			fmt.Println(version.LatestVersionInfo.Body)
-			fmt.Println("------------------------------------")
-			fmt.Println("Upgrade at https://github.com/tardisx/discord-auto-upload/releases/latest")
-			daulog.SendLog(fmt.Sprintf("New version available: %s - download at https://github.com/tardisx/discord-auto-upload/releases/latest", version.LatestVersionInfo.TagName), daulog.LogTypeInfo)
+			daulog.Info("*** NEW VERSION AVAILABLE ***")
+			daulog.Infof("You are currently on version %s, but version %s is available\n", version.CurrentVersion, version.LatestVersionInfo.TagName)
+			daulog.Info("----------- Release Info -----------")
+			daulog.Info(version.LatestVersionInfo.Body)
+			daulog.Info("------------------------------------")
+			daulog.Info("Upgrade at https://github.com/tardisx/discord-auto-upload/releases/latest")
 		}
 	}()
 
@@ -71,17 +71,17 @@ func main() {
 
 func startWatchers(config *config.ConfigService, up *upload.Uploader, configChange chan bool) {
 	for {
-		daulog.SendLog("Creating watchers", daulog.LogTypeInfo)
+		daulog.Debug("Creating watchers")
 		ctx, cancel := context.WithCancel(context.Background())
 		for _, c := range config.Config.Watchers {
-			log.Printf("Creating watcher for %s interval %d", c.Path, config.Config.WatchInterval)
+			daulog.Infof("Creating watcher for %s with interval %d", c.Path, config.Config.WatchInterval)
 			watcher := watch{uploader: up, lastCheck: time.Now(), newLastCheck: time.Now(), config: c}
 			go watcher.Watch(config.Config.WatchInterval, ctx)
 		}
 		// wait for single that the config changed
 		<-configChange
 		cancel()
-		daulog.SendLog("starting new watchers due to config change", daulog.LogTypeInfo)
+		daulog.Info("starting new watchers due to config change")
 	}
 
 }
@@ -90,7 +90,7 @@ func (w *watch) Watch(interval int, ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			daulog.SendLog("Killing old watcher", daulog.LogTypeInfo)
+			daulog.Info("Killing old watcher")
 			return
 		default:
 			newFiles := w.ProcessNewFiles()
@@ -99,7 +99,7 @@ func (w *watch) Watch(interval int, ctx context.Context) {
 			}
 			// upload them
 			w.uploader.Upload()
-			daulog.SendLog(fmt.Sprintf("sleeping for %ds before next check of %s", interval, w.config.Path), daulog.LogTypeDebug)
+			daulog.Debugf("sleeping for %ds before next check of %s", interval, w.config.Path)
 			time.Sleep(time.Duration(interval) * time.Second)
 		}
 	}
@@ -130,11 +130,11 @@ func (w *watch) ProcessNewFiles() []string {
 func (w *watch) checkPath() bool {
 	src, err := os.Stat(w.config.Path)
 	if err != nil {
-		daulog.SendLog(fmt.Sprintf("Problem with path '%s': %s", w.config.Path, err), daulog.LogTypeError)
+		daulog.Errorf("Problem with path '%s': %s", w.config.Path, err)
 		return false
 	}
 	if !src.IsDir() {
-		daulog.SendLog(fmt.Sprintf("Problem with path '%s': is not a directory", w.config.Path), daulog.LogTypeError)
+		daulog.Errorf("Problem with path '%s': is not a directory", w.config.Path)
 		return false
 	}
 	return true

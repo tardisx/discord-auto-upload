@@ -119,19 +119,19 @@ func (u *Upload) RemoveMarkupTempFile() {
 }
 
 func (u *Upload) processUpload() error {
-	daulog.SendLog(fmt.Sprintf("Uploading: %s", u.OriginalFilename), daulog.LogTypeInfo)
+	daulog.Infof("Uploading: %s", u.OriginalFilename)
 
 	baseFilename := filepath.Base(u.OriginalFilename)
 
 	if u.webhookURL == "" {
-		daulog.SendLog("WebHookURL is not configured - cannot upload!", daulog.LogTypeError)
+		daulog.Error("WebHookURL is not configured - cannot upload!")
 		return errors.New("webhook url not configured")
 	}
 
 	extraParams := map[string]string{}
 
 	if u.usernameOverride != "" {
-		daulog.SendLog("Overriding username with "+u.usernameOverride, daulog.LogTypeInfo)
+		daulog.Infof("Overriding username with '%s'", u.usernameOverride)
 		extraParams["username"] = u.usernameOverride
 	}
 
@@ -158,7 +158,7 @@ func (u *Upload) processUpload() error {
 		if len(u.MarkedUpFilename) > 0 {
 			filedata, err = os.Open(u.MarkedUpFilename)
 			if err != nil {
-				log.Print("Error opening marked up file:", err)
+				daulog.Errorf("Error opening marked up file: %s", err)
 				retriesRemaining--
 				sleepForRetries(retriesRemaining)
 				continue
@@ -166,7 +166,7 @@ func (u *Upload) processUpload() error {
 		} else {
 			filedata, err = os.Open(u.OriginalFilename)
 			if err != nil {
-				log.Print("Error opening original file:", err)
+				daulog.Errorf("Error opening original file: %s", err)
 				retriesRemaining--
 				sleepForRetries(retriesRemaining)
 				continue
@@ -175,10 +175,10 @@ func (u *Upload) processUpload() error {
 
 		var imageData io.Reader
 		if u.watermark {
-			daulog.SendLog("Watermarking image", daulog.LogTypeInfo)
+			daulog.Info("Watermarking image")
 			imageData, err = u.applyWatermark(filedata)
 			if err != nil {
-				log.Print("Error watermarking:", err)
+				daulog.Errorf("Error watermarking: %s", err)
 				retriesRemaining--
 				sleepForRetries(retriesRemaining)
 				continue
@@ -189,7 +189,7 @@ func (u *Upload) processUpload() error {
 
 		request, err := newfileUploadRequest(u.webhookURL, extraParams, "file", baseFilename, imageData)
 		if err != nil {
-			log.Printf("error creating upload request: %s", err)
+			daulog.Errorf("error creating upload request: %s", err)
 			return fmt.Errorf("could not create upload request: %s", err)
 		}
 		start := time.Now()
@@ -202,24 +202,23 @@ func (u *Upload) processUpload() error {
 
 		resp, err := u.Client.Do(request)
 		if err != nil {
-			log.Print("Error performing request:", err)
+			daulog.Errorf("Error performing request: %s", err)
 			retriesRemaining--
 			sleepForRetries(retriesRemaining)
 			continue
 		} else {
 			if resp.StatusCode == 413 {
 				// just fail immediately, we know this means the file was too big
-				daulog.SendLog("413 received - file too large", daulog.LogTypeError)
+				daulog.Error("413 received - file too large")
 				u.State = StateFailed
 				return errors.New("received 413 - file too large")
 			}
 
 			if resp.StatusCode != 200 {
 				// {"message": "Request entity too large", "code": 40005}
-				log.Print("Bad response from server:", resp.StatusCode)
+				daulog.Errorf("Bad response code from server: %d", resp.StatusCode)
 				if b, err := ioutil.ReadAll(resp.Body); err == nil {
-					log.Print("Body:", string(b))
-					daulog.SendLog(fmt.Sprintf("Bad response: %s", string(b)), daulog.LogTypeError)
+					daulog.Errorf("Body:\n%s", string(b))
 				}
 				retriesRemaining--
 				sleepForRetries(retriesRemaining)
@@ -228,7 +227,7 @@ func (u *Upload) processUpload() error {
 
 			resBody, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				log.Print("could not deal with body: ", err)
+				daulog.Errorf("could not deal with body: %s", err)
 				retriesRemaining--
 				sleepForRetries(retriesRemaining)
 				continue
@@ -240,17 +239,17 @@ func (u *Upload) processUpload() error {
 
 			//  {"id": "851092588608880670", "type": 0, "content": "", "channel_id": "849615269706203171", "author": {"bot": true, "id": "849615314274484224", "username": "abcdedf", "avatar": null, "discriminator": "0000"}, "attachments": [{"id": "851092588332449812", "filename": "dau480457962.png", "size": 859505, "url": "https://cdn.discordapp.com/attachments/849615269706203171/851092588332449812/dau480457962.png", "proxy_url": "https://media.discordapp.net/attachments/849615269706203171/851092588332449812/dau480457962.png", "width": 640, "height": 640, "content_type": "image/png"}], "embeds": [], "mentions": [], "mention_roles": [], "pinned": false, "mention_everyone": false, "tts": false, "timestamp": "2021-06-06T13:38:05.660000+00:00", "edited_timestamp": null, "flags": 0, "components": [], "webhook_id": "849615314274484224"}
 
-			daulog.SendLog(fmt.Sprintf("Response: %s", string(resBody[:])), daulog.LogTypeDebug)
+			daulog.Debugf("Response: %s", string(resBody[:]))
 
 			if err != nil {
-				log.Print("could not parse JSON: ", err)
-				fmt.Println("Response was:", string(resBody[:]))
+				daulog.Errorf("could not parse JSON: %s", err)
+				daulog.Errorf("Response was: %s", string(resBody[:]))
 				retriesRemaining--
 				sleepForRetries(retriesRemaining)
 				continue
 			}
 			if len(res.Attachments) < 1 {
-				log.Print("bad response - no attachments?")
+				daulog.Error("bad response - no attachments?")
 				retriesRemaining--
 				sleepForRetries(retriesRemaining)
 				continue
@@ -259,8 +258,8 @@ func (u *Upload) processUpload() error {
 			elapsed := time.Since(start)
 			rate := float64(a.Size) / elapsed.Seconds() / 1024.0
 
-			daulog.SendLog(fmt.Sprintf("Uploaded to %s %dx%d", a.URL, a.Width, a.Height), daulog.LogTypeInfo)
-			daulog.SendLog(fmt.Sprintf("id: %d, %d bytes transferred in %.2f seconds (%.2f KiB/s)", res.ID, a.Size, elapsed.Seconds(), rate), daulog.LogTypeInfo)
+			daulog.Infof("Uploaded to %s %dx%d", a.URL, a.Width, a.Height)
+			daulog.Infof("id: %d, %d bytes transferred in %.2f seconds (%.2f KiB/s)", res.ID, a.Size, elapsed.Seconds(), rate)
 
 			u.Url = a.URL
 			u.State = StateComplete
@@ -276,7 +275,7 @@ func (u *Upload) processUpload() error {
 	u.RemoveMarkupTempFile()
 
 	if retriesRemaining == 0 {
-		daulog.SendLog("Failed to upload, even after all retries", daulog.LogTypeError)
+		daulog.Error("Failed to upload, even after all retries")
 		u.State = StateFailed
 		return errors.New("could not upload after all retries")
 	}
@@ -317,7 +316,7 @@ func (u *Upload) applyWatermark(in *os.File) (io.Reader, error) {
 
 	im, _, err := image.Decode(in)
 	if err != nil {
-		daulog.SendLog(fmt.Sprintf("Cannot decode image: %v - skipping watermarking", err), daulog.LogTypeError)
+		daulog.Errorf("Cannot decode image: %v - skipping watermarking", err)
 		return nil, errors.New("cannot decode image")
 	}
 	bounds := im.Bounds()
@@ -349,6 +348,6 @@ func sleepForRetries(retry int) {
 		return
 	}
 	retryTime := (6-retry)*(6-retry) + 6
-	daulog.SendLog(fmt.Sprintf("Will retry in %d seconds (%d remaining attempts)", retryTime, retry), daulog.LogTypeError)
+	daulog.Errorf("Will retry in %d seconds (%d remaining attempts)", retryTime, retry)
 	time.Sleep(time.Duration(retryTime) * time.Second)
 }

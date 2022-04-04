@@ -38,7 +38,7 @@ func UpdateAvailable() bool {
 
 	if !semver.IsValid(LatestVersion) {
 		// maybe this should just be a warning
-		log.Printf("online version '%s' is not valid - assuming no new version", LatestVersion)
+		daulog.Errorf("online version '%s' is not valid - assuming no new version", LatestVersion)
 		return false
 	}
 	comp := semver.Compare(LatestVersion, CurrentVersion)
@@ -53,20 +53,12 @@ func UpdateAvailable() bool {
 
 func GetOnlineVersion() {
 
-	daulog.SendLog("checking for new version", daulog.LogTypeInfo)
-	LatestVersion = "v0.12.0"
-	LatestVersionInfo = GithubRelease{
-		HTMLURL: "https://github.com/tardisx/discord-auto-upload/releases/tag/v0.13.0",
-		TagName: "v0.13.0",
-		Name:    "v0.13.0",
-		Body:    "- cool things\n-wow things\n",
-	}
-	return
+	daulog.Info("checking for new version")
 
 	client := &http.Client{Timeout: time.Second * 5}
 	resp, err := client.Get("https://api.github.com/repos/tardisx/discord-auto-upload/releases/latest")
 	if err != nil {
-		daulog.SendLog(fmt.Sprintf("WARNING: Update check failed: %v", err), daulog.LogTypeError)
+		daulog.Errorf("WARNING: Update check failed: %s", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -84,4 +76,6 @@ func GetOnlineVersion() {
 
 	LatestVersion = latest.TagName
 	LatestVersionInfo = latest
+	daulog.Debugf("Latest version: %s", LatestVersion)
+
 }

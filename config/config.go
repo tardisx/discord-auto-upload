@@ -54,11 +54,11 @@ func DefaultConfigService() *ConfigService {
 // LoadOrInit loads the current configuration from the config file, or creates
 // a new config file if none exists.
 func (c *ConfigService) LoadOrInit() error {
-	daulog.SendLog(fmt.Sprintf("Trying to load config from %s\n", c.ConfigFilename), daulog.LogTypeDebug)
+	daulog.Debugf("Trying to load config from %s\n", c.ConfigFilename)
 	_, err := os.Stat(c.ConfigFilename)
 	if os.IsNotExist(err) {
-		daulog.SendLog("NOTE: No config file, writing out sample configuration", daulog.LogTypeInfo)
-		daulog.SendLog("You need to set the configuration via the web interface", daulog.LogTypeInfo)
+		daulog.Info("NOTE: No config file, writing out sample configuration")
+		daulog.Info("You need to set the configuration via the web interface")
 		c.Config = DefaultConfig()
 		return c.Save()
 	} else {
@@ -84,7 +84,7 @@ func DefaultConfig() *ConfigV2 {
 
 // Load will load the configuration from a known-to-exist config file.
 func (c *ConfigService) Load() error {
-	fmt.Printf("Loading from %s\n\n", c.ConfigFilename)
+	daulog.Debugf("Loading from %s", c.ConfigFilename)
 
 	data, err := ioutil.ReadFile(c.ConfigFilename)
 	if err != nil {
@@ -98,7 +98,7 @@ func (c *ConfigService) Load() error {
 	// Version 0 predates config migrations
 	if c.Config.Version == 0 {
 		// need to migrate this
-		daulog.SendLog("Migrating config to V2", daulog.LogTypeInfo)
+		daulog.Info("Migrating config to V2")
 
 		configV1 := ConfigV1{}
 		err = json.Unmarshal([]byte(data), &configV1)
@@ -126,7 +126,7 @@ func (c *ConfigService) Load() error {
 }
 
 func (c *ConfigService) Save() error {
-	daulog.SendLog("saving configuration", daulog.LogTypeInfo)
+	daulog.Info("saving configuration")
 	// sanity checks
 	for _, watcher := range c.Config.Watchers {
 
