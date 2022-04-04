@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 - Show if a new version is available in the web interface
+- Rework logging and fix the log display in the web interface
 
 ## [v0.12.0] - 2020-04-03
 
