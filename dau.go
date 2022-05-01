@@ -39,6 +39,10 @@ type watch struct {
 //go:embed dau.ico
 var appIcon []byte
 
+//go:generate goversioninfo -icon=dau.ico
+
+// -manifest=testdata/resource/goversioninfo.exe.manifest
+
 func main() {
 
 	parseOptions()

@@ -37,7 +37,16 @@ foreach my $type (keys %build) {
   print "building for $type\n";
   local $ENV{GOOS}   = $build{$type}->{env}->{GOOS};
   local $ENV{GOARCH} = $build{$type}->{env}->{GOARCH};
-  system "go", "build", "-o", "release/$type/" . $build{$type}->{filename};
+
+  unlink "resource.syso";
+
+  my @ldflags = ();
+  if ($type eq "win") {
+    @ldflags = (qw/ -ldflags -H=windowsgui/);
+    system "go", "generate";
+  }
+  warn join(' ', "go", "build", @ldflags, "-o", "release/$type/" . $build{$type}->{filename});
+  system "go", "build", @ldflags, "-o", "release/$type/" . $build{$type}->{filename};
   system "zip", "-j", "dist/dau-$type-$version.zip", ( glob "release/$type/*" );
 }
 

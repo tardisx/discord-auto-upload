@@ -7,6 +7,7 @@ require (
 	github.com/getlantern/systray v1.2.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gorilla/mux v1.8.0
+	github.com/josephspurrier/goversioninfo v1.4.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	golang.org/x/image v0.0.0-20210504121937-7319ad40d33e
