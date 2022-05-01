@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.12.1] - 2020-05-01
+
 - Show if a new version is available in the web interface
 - Rework logging and fix the log display in the web interface
 
