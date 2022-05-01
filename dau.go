@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	_ "embed"
-
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
@@ -35,33 +33,26 @@ type watch struct {
 	uploader     *upload.Uploader
 }
 
-//go:embed dau.ico
-var appIcon []byte
-
-//go:generate goversioninfo -icon=dau.ico
-
-// -manifest=testdata/resource/goversioninfo.exe.manifest
-
 func main() {
 
 	parseOptions()
 
-	// grab the config, register to notice changes
-	config := config.DefaultConfigService()
+	// grab the conf, register to notice changes
+	conf := config.DefaultConfigService()
 	configChanged := make(chan bool)
-	config.Changed = configChanged
-	config.LoadOrInit()
+	conf.Changed = configChanged
+	conf.LoadOrInit()
 
 	// create the uploader
 	up := upload.NewUploader()
 
 	// log.Print("Opening web browser")
 	// open.Start("http://localhost:9090")
-	web := web.WebService{Config: config, Uploader: up}
+	web := web.WebService{Config: conf, Uploader: up}
 	web.StartWebServer()
 
-	if config.Config.OpenBrowserOnStart {
-		openWebBrowser(config.Config.Port)
+	if conf.Config.OpenBrowserOnStart {
+		openWebBrowser(conf.Config.Port)
 	}
 
 	go func() {
@@ -79,10 +70,9 @@ func main() {
 	// create the watchers, restart them if config changes
 	// blocks forever
 	go func() {
-		startWatchers(config, up, configChanged)
+		startWatchers(conf, up, configChanged)
 	}()
-
-	mainloop(config)
+	mainloop(conf)
 
 }
 

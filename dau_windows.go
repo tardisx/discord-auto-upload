@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"github.com/getlantern/systray"
 	"github.com/skratchdot/open-golang/open"
@@ -8,6 +9,13 @@ import (
 	daulog "github.com/tardisx/discord-auto-upload/log"
 	"github.com/tardisx/discord-auto-upload/version"
 )
+
+//go:embed dau.ico
+var appIcon []byte
+
+//go:generate goversioninfo -icon=dau.ico
+
+// -manifest=testdata/resource/goversioninfo.exe.manifest
 
 func mainloop(c *config.ConfigService) {
 	systray.Run(func() { onReady(c) }, onExit)
@@ -20,6 +28,7 @@ func onReady(c *config.ConfigService) {
 	systray.SetTooltip(fmt.Sprintf("discord-auto-upload %s", version.CurrentVersion))
 	openApp := systray.AddMenuItem("Open", "Open in web browser")
 	gh := systray.AddMenuItem("Github", "Open project page")
+	discord := systray.AddMenuItem("Discord", "Join us on discord")
 	ghr := systray.AddMenuItem("Release Notes", "Open project release notes")
 	quit := systray.AddMenuItem("Quit", "Quit")
 
@@ -37,6 +46,8 @@ func onReady(c *config.ConfigService) {
 				open.Start("https://github.com/tardisx/discord-auto-upload")
 			case <-ghr.ClickedCh:
 				open.Start(fmt.Sprintf("https://github.com/tardisx/discord-auto-upload/releases/tag/%s", version.CurrentVersion))
+			case <-discord.ClickedCh:
+				open.Start("https://discord.gg/eErG9sntbZ")
 			}
 		}
 	}()
