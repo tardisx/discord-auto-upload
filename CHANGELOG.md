@@ -3,16 +3,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.12.2] - 2022-05-01
+
 - Automatically open your web browser to the `dau` web interface
   (can be disabled in configuration)
-- Add system tray/menubar icon for control
+- Add system tray/menubar icon with menus to open web interface, quit and
+  other links
+- Superfluous text console removed on windows
 
-## [v0.12.1] - 2020-05-01
+## [v0.12.1] - 2022-05-01
 
 - Show if a new version is available in the web interface
 - Rework logging and fix the log display in the web interface
 
-## [v0.12.0] - 2020-04-03
+## [v0.12.0] - 2022-04-03
 
 - Break upload page into pending/current/complete sections
 - Add preview thumbnails for each upload
