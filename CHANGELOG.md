@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 
 - Automatically open your web browser to the `dau` web interface
   (can be disabled in configuration)
+- Add system tray/menubar icon for control
 
 ## [v0.12.1] - 2020-05-01
 

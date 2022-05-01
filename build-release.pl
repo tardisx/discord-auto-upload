@@ -34,6 +34,7 @@ foreach my $type (keys %build) {
 add_extras();
 
 foreach my $type (keys %build) {
+  print "building for $type\n";
   local $ENV{GOOS}   = $build{$type}->{env}->{GOOS};
   local $ENV{GOARCH} = $build{$type}->{env}->{GOARCH};
   system "go", "build", "-o", "release/$type/" . $build{$type}->{filename};

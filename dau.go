@@ -11,16 +11,17 @@ import (
 	"strings"
 	"time"
 
+	_ "embed"
+
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
-
-	// "github.com/skratchdot/open-golang/open"
 
 	"github.com/tardisx/discord-auto-upload/config"
 	daulog "github.com/tardisx/discord-auto-upload/log"
 	"github.com/tardisx/discord-auto-upload/upload"
 
+	"github.com/getlantern/systray"
 	"github.com/skratchdot/open-golang/open"
 
 	// "github.com/tardisx/discord-auto-upload/upload"
@@ -34,6 +35,9 @@ type watch struct {
 	config       config.Watcher
 	uploader     *upload.Uploader
 }
+
+//go:embed dau.ico
+var appIcon []byte
 
 func main() {
 
@@ -54,8 +58,7 @@ func main() {
 	web.StartWebServer()
 
 	if config.Config.OpenBrowserOnStart {
-		address := fmt.Sprintf("http://localhost:%d", config.Config.Port)
-		open.Start(address)
+		openWebBrowser(config.Config.Port)
 	}
 
 	go func() {
@@ -72,7 +75,11 @@ func main() {
 
 	// create the watchers, restart them if config changes
 	// blocks forever
-	startWatchers(config, up, configChanged)
+	go func() {
+		startWatchers(config, up, configChanged)
+	}()
+
+	systray.Run(func() { onReady(config) }, onExit)
 
 }
 
@@ -194,4 +201,46 @@ func parseOptions() {
 		os.Exit(0)
 	}
 
+}
+
+func onReady(c *config.ConfigService) {
+
+	systray.SetIcon(appIcon)
+	//systray.SetTitle("DAU")
+	systray.SetTooltip(fmt.Sprintf("discord-auto-upload %s", version.CurrentVersion))
+	openApp := systray.AddMenuItem("Open", "Open in web browser")
+	gh := systray.AddMenuItem("Github", "Open project page")
+	ghr := systray.AddMenuItem("Release Notes", "Open project release notes")
+	quit := systray.AddMenuItem("Quit", "Quit")
+
+	go func() {
+		<-quit.ClickedCh
+		systray.Quit()
+	}()
+
+	go func() {
+		for {
+			select {
+			case <-openApp.ClickedCh:
+				openWebBrowser(c.Config.Port)
+			case <-gh.ClickedCh:
+				open.Start("https://github.com/tardisx/discord-auto-upload")
+			case <-ghr.ClickedCh:
+				open.Start(fmt.Sprintf("https://github.com/tardisx/discord-auto-upload/releases/tag/%s", version.CurrentVersion))
+			}
+		}
+	}()
+
+	// Sets the icon of a menu item. Only available on Mac and Windows.
+	// mQuit.SetIcon(icon.Data)
+}
+
+func onExit() {
+	// clean up here
+	daulog.Info("quitting on user request")
+}
+
+func openWebBrowser(port int) {
+	address := fmt.Sprintf("http://localhost:%d", port)
+	open.Start(address)
 }
