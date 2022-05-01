@@ -1,13 +1,13 @@
 {
     "FixedFileInfo": {
         "FileVersion": {
-            "Major": 1,
+            "Major": 0,
             "Minor": 0,
             "Patch": 0,
             "Build": 0
         },
         "ProductVersion": {
-            "Major": 1,
+            "Major": 0,
             "Minor": 0,
             "Patch": 0,
             "Build": 0
@@ -20,16 +20,16 @@
     },
     "StringFileInfo": {
         "Comments": "",
-        "CompanyName": "",
-        "FileDescription": "",
+        "CompanyName": "tardisx@github",
+        "FileDescription": "https://github.com/tardisx/discord-auto-upload",
         "FileVersion": "",
         "InternalName": "",
-        "LegalCopyright": "",
+        "LegalCopyright": "https://github.com/tardisx/discord-auto-upload/blob/master/LICENSE",
         "LegalTrademarks": "",
         "OriginalFilename": "",
         "PrivateBuild": "",
-        "ProductName": "",
-        "ProductVersion": "v1.0.0.0",
+        "ProductName": "discord-auto-upload",
+        "ProductVersion": "v0.0.0",
         "SpecialBuild": ""
     },
     "VarFileInfo": {

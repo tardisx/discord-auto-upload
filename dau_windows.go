@@ -13,7 +13,7 @@ import (
 //go:embed dau.ico
 var appIcon []byte
 
-//go:generate goversioninfo -icon=dau.ico
+//go:generate goversioninfo
 
 // -manifest=testdata/resource/goversioninfo.exe.manifest
 
