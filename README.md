@@ -29,8 +29,13 @@ You'll need to [download Go](https://golang.org/dl/), check the code out somewhe
 ## Using it
 
 `dau` configuration is managed via its internal web interface. When the executable is run, you can visit
-`http://localhost:9090` in your web browser to configure the it. Configuration persists across runs, it is
-saved in a file called '.dau.json' in your home directory.
+`http://localhost:9090` in your web browser to configure it. On Windows, a tray icon is created to provide
+access to the web interface.
+
+The web browser will be loaded automatically when you start the program, if possible. This option can be
+disabled in the settings.
+
+Configuration persists across runs, it is saved in a file called '.dau.json' in your home directory.
 
 The first time you run it, you will need to configure at least the discord web hook and the watch path for
 `dau` to be useful.
