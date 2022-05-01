@@ -21,6 +21,8 @@ import (
 	daulog "github.com/tardisx/discord-auto-upload/log"
 	"github.com/tardisx/discord-auto-upload/upload"
 
+	"github.com/skratchdot/open-golang/open"
+
 	// "github.com/tardisx/discord-auto-upload/upload"
 	"github.com/tardisx/discord-auto-upload/version"
 	"github.com/tardisx/discord-auto-upload/web"
@@ -50,6 +52,11 @@ func main() {
 	// open.Start("http://localhost:9090")
 	web := web.WebService{Config: config, Uploader: up}
 	web.StartWebServer()
+
+	if config.Config.OpenBrowserOnStart {
+		address := fmt.Sprintf("http://localhost:%d", config.Config.Port)
+		open.Start(address)
+	}
 
 	go func() {
 		version.GetOnlineVersion()

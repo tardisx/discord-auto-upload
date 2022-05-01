@@ -133,7 +133,7 @@ func (ws *WebService) getLogs(w http.ResponseWriter, r *http.Request) {
 func (ws *WebService) handleConfig(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 
-		newConfig := config.ConfigV2{}
+		newConfig := config.ConfigV3{}
 
 		defer r.Body.Close()
 		b, err := ioutil.ReadAll(r.Body)

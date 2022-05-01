@@ -22,8 +22,8 @@ func TestNoConfig(t *testing.T) {
 		t.Errorf("unexpected failure from load: %s", err)
 	}
 
-	if c.Config.Version != 2 {
-		t.Error("not version 2 starting config")
+	if c.Config.Version != 3 {
+		t.Error("not version 3 starting config")
 	}
 
 	if fileSize(c.ConfigFilename) < 40 {
@@ -45,7 +45,7 @@ func TestEmptyFileConfig(t *testing.T) {
 
 }
 
-func TestMigrateFromV1toV2(t *testing.T) {
+func TestMigrateFromV1toV3(t *testing.T) {
 	c := ConfigService{}
 
 	c.ConfigFilename = v1Config()
@@ -53,8 +53,12 @@ func TestMigrateFromV1toV2(t *testing.T) {
 	if err != nil {
 		t.Error("unexpected error from LoadOrInit()")
 	}
-	if c.Config.Version != 2 {
-		t.Errorf("Version %d not 2", c.Config.Version)
+	if c.Config.Version != 3 {
+		t.Errorf("Version %d not 3", c.Config.Version)
+	}
+
+	if c.Config.OpenBrowserOnStart != true {
+		t.Errorf("Open browser on start not true")
 	}
 
 	if len(c.Config.Watchers) != 1 {

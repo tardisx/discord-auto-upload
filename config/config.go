@@ -38,8 +38,16 @@ type ConfigV2 struct {
 	Watchers      []Watcher
 }
 
+type ConfigV3 struct {
+	WatchInterval      int
+	Version            int
+	Port               int
+	OpenBrowserOnStart bool
+	Watchers           []Watcher
+}
+
 type ConfigService struct {
-	Config         *ConfigV2
+	Config         *ConfigV3
 	Changed        chan bool
 	ConfigFilename string
 }
@@ -66,11 +74,12 @@ func (c *ConfigService) LoadOrInit() error {
 	}
 }
 
-func DefaultConfig() *ConfigV2 {
-	c := ConfigV2{}
-	c.Version = 2
+func DefaultConfig() *ConfigV3 {
+	c := ConfigV3{}
+	c.Version = 3
 	c.WatchInterval = 10
 	c.Port = 9090
+	c.OpenBrowserOnStart = true
 	w := Watcher{
 		WebHookURL:  "https://webhook.url.here",
 		Path:        "/your/screenshot/dir/here",
@@ -120,6 +129,13 @@ func (c *ConfigService) Load() error {
 		}
 
 		c.Config.Watchers = []Watcher{onlyWatcher}
+	}
+
+	if c.Config.Version == 2 {
+		// need to migrate this
+		daulog.Info("Migrating config to V3")
+		c.Config.Version = 3
+		c.Config.OpenBrowserOnStart = true
 	}
 
 	return nil

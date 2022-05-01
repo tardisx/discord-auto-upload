@@ -21,7 +21,7 @@
     </p>
 
     <p>The Watch Interval is how often new files will be discovered by your
-      watchers (configured below).</p>
+      watchers (watchers are configured below).</p>
 
     <div class="form-row align-items-center">
       <div class="col-sm-6 my-1">
@@ -30,6 +30,17 @@
       <div class="col-sm-6 my-1">
         <label class="sr-only">Server port</label>
         <input type="text" class="form-control" placeholder="" x-model.number="config.Port">
+      </div>
+    </div>
+
+    <div class="form-row align-items-center">
+      <div class="col-sm-6 my-1">
+        <span>Open browser on startup</span>
+      </div>
+      <div class="col-sm-6 my-1">
+        <label class="sr-only">Open browser</label>
+        <button type="button" @click="config.OpenBrowserOnStart = ! config.OpenBrowserOnStart" class="btn btn-success" x-text="config.OpenBrowserOnStart ? 'Enabled' : 'Disabled'"></button>
+
       </div>
     </div>
 
