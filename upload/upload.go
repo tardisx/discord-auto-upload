@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -43,6 +44,7 @@ type HTTPClient interface {
 
 type Uploader struct {
 	Uploads []*Upload `json:"uploads"`
+	Lock    sync.Mutex
 }
 
 type Upload struct {
@@ -76,6 +78,7 @@ func NewUploader() *Uploader {
 }
 
 func (u *Uploader) AddFile(file string, conf config.Watcher) {
+	u.Lock.Lock()
 	atomic.AddInt32(&currentId, 1)
 	thisUpload := Upload{
 		Id:               currentId,
@@ -91,19 +94,27 @@ func (u *Uploader) AddFile(file string, conf config.Watcher) {
 		thisUpload.State = StatePending
 	}
 	u.Uploads = append(u.Uploads, &thisUpload)
+	u.Lock.Unlock()
+
 }
 
 // Upload uploads any files that have not yet been uploaded
 func (u *Uploader) Upload() {
+	u.Lock.Lock()
 
 	for _, upload := range u.Uploads {
 		if upload.State == StateQueued {
 			upload.processUpload()
 		}
 	}
+	u.Lock.Unlock()
+
 }
 
 func (u *Uploader) UploadById(id int32) *Upload {
+	u.Lock.Lock()
+	defer u.Lock.Unlock()
+
 	for _, anUpload := range u.Uploads {
 		if anUpload.Id == int32(id) {
 			return anUpload

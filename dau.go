@@ -129,6 +129,7 @@ func (w *watch) ProcessNewFiles() []string {
 		}
 		w.lastCheck = w.newLastCheck
 	}
+
 	return newFiles
 }
 
