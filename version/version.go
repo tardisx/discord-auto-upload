@@ -13,7 +13,7 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-const CurrentVersion string = "v0.12.2"
+const CurrentVersion string = "v0.12.3"
 
 type GithubRelease struct {
 	HTMLURL string `json:"html_url"`
