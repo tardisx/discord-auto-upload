@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.12.4] - 2022-09-15
+
+- Document that watcher intervals are in seconds
+
 ## [v0.12.3] - 2022-05-09
 
 - Fix a race condition occasionally causing multiple duplicate uploads

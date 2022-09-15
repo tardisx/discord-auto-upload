@@ -54,7 +54,7 @@ no changes will take effect until the "Save All Configuration" button has been p
 ### Global options
 
 * Server port - the port number the web server listens on. Requires restart
-* Watch interval - how often each watcher will check the directory for new files
+* Watch interval - how often each watcher will check the directory for new files, in seconds
 
 ### Watcher configuration
 
