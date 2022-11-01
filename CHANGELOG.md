@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.13.0] - 2022-11-01
+
+- Resize images if needed to fit in discord 8Mb upload limits
+
+
 ## [v0.12.4] - 2022-09-15
 
 - Document that watcher intervals are in seconds

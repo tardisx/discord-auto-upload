@@ -1,14 +1,13 @@
-package imageprocess
+package image
 
 import (
 	"fmt"
-	"image"
+	i "image"
 	"image/png"
 	"io"
 	"log"
 	"os"
 
-	"github.com/tardisx/discord-auto-upload/upload"
 	"golang.org/x/image/draw"
 )
 
@@ -17,15 +16,21 @@ const (
 	thumbnailMaxY = 128
 )
 
-func (ip *Processor) ThumbPNG(ul *upload.Upload, which string, w io.Writer) error {
+type ThumbType = string
+
+const ThumbTypeOriginal = "orig"
+const ThumbTypeMarkedUp = "markedup"
+
+// ThumbPNG writes a thumbnail out to an io.Writer
+func (ip *Store) ThumbPNG(t ThumbType, w io.Writer) error {
 
 	var filename string
-	if which == "orig" {
-		filename = ul.OriginalFilename
-	} else if which == "markedup" {
-		filename = ul.MarkedUpFilename
+	if t == ThumbTypeOriginal {
+		filename = ip.OriginalFilename
+	} else if t == ThumbTypeMarkedUp {
+		filename = ip.ModifiedFilename
 	} else {
-		log.Fatal("was passed incorrect 'which' arg")
+		log.Fatal("was passed incorrect 'type' arg")
 	}
 
 	file, err := os.Open(filename)
@@ -33,12 +38,12 @@ func (ip *Processor) ThumbPNG(ul *upload.Upload, which string, w io.Writer) erro
 		return fmt.Errorf("could not open file: %s", err)
 	}
 	defer file.Close()
-	im, _, err := image.Decode(file)
+	im, _, err := i.Decode(file)
 	if err != nil {
 		return fmt.Errorf("could not decode file: %s", err)
 	}
 
-	newXY := image.Point{}
+	newXY := i.Point{}
 	if im.Bounds().Max.X/thumbnailMaxX > im.Bounds().Max.Y/thumbnailMaxY {
 		newXY.X = thumbnailMaxX
 		newXY.Y = im.Bounds().Max.Y / (im.Bounds().Max.X / thumbnailMaxX)
@@ -47,7 +52,7 @@ func (ip *Processor) ThumbPNG(ul *upload.Upload, which string, w io.Writer) erro
 		newXY.X = im.Bounds().Max.X / (im.Bounds().Max.Y / thumbnailMaxY)
 	}
 
-	dst := image.NewRGBA(image.Rect(0, 0, newXY.X, newXY.Y))
+	dst := i.NewRGBA(i.Rect(0, 0, newXY.X, newXY.Y))
 	draw.BiLinear.Scale(dst, dst.Rect, im, im.Bounds(), draw.Over, nil)
 
 	png.Encode(w, dst)

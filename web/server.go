@@ -19,7 +19,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/tardisx/discord-auto-upload/config"
-	"github.com/tardisx/discord-auto-upload/imageprocess"
+	"github.com/tardisx/discord-auto-upload/image"
 	daulog "github.com/tardisx/discord-auto-upload/log"
 	"github.com/tardisx/discord-auto-upload/upload"
 	"github.com/tardisx/discord-auto-upload/version"
@@ -178,7 +178,6 @@ func (ws *WebService) getUploads(w http.ResponseWriter, r *http.Request) {
 func (ws *WebService) imageThumb(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "image/png")
-	processor := imageprocess.Processor{}
 
 	vars := mux.Vars(r)
 	id, err := strconv.ParseInt(vars["id"], 10, 32)
@@ -192,7 +191,7 @@ func (ws *WebService) imageThumb(w http.ResponseWriter, r *http.Request) {
 		returnJSONError(w, "bad id")
 		return
 	}
-	err = processor.ThumbPNG(ul, "orig", w)
+	err = ul.Image.ThumbPNG(image.ThumbTypeOriginal, w)
 	if err != nil {
 		returnJSONError(w, "could not create thumb")
 		return
@@ -202,7 +201,6 @@ func (ws *WebService) imageThumb(w http.ResponseWriter, r *http.Request) {
 func (ws *WebService) imageMarkedupThumb(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "image/png")
-	processor := imageprocess.Processor{}
 
 	vars := mux.Vars(r)
 	id, err := strconv.ParseInt(vars["id"], 10, 32)
@@ -216,7 +214,7 @@ func (ws *WebService) imageMarkedupThumb(w http.ResponseWriter, r *http.Request)
 		returnJSONError(w, "bad id")
 		return
 	}
-	err = processor.ThumbPNG(ul, "markedup", w)
+	err = ul.Image.ThumbPNG(image.ThumbTypeMarkedUp, w)
 	if err != nil {
 		returnJSONError(w, "could not create thumb")
 		return
@@ -238,7 +236,7 @@ func (ws *WebService) image(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img, err := os.Open(ul.OriginalFilename)
+	img, err := os.Open(ul.Image.OriginalFilename)
 	if err != nil {
 		returnJSONError(w, "could not open image file")
 		return
@@ -276,7 +274,7 @@ func (ws *WebService) modifyUpload(w http.ResponseWriter, r *http.Request) {
 				return
 			} else if change == "skip" {
 				anUpload.State = upload.StateSkipped
-				anUpload.RemoveMarkupTempFile()
+				anUpload.Image.Cleanup()
 				res := StartUploadResponse{Success: true, Message: "upload skipped"}
 				resString, _ := json.Marshal(res)
 				w.Write(resString)
@@ -311,7 +309,7 @@ func (ws *WebService) modifyUpload(w http.ResponseWriter, r *http.Request) {
 				}
 
 				tempfile.Close()
-				anUpload.MarkedUpFilename = tempfile.Name()
+				anUpload.Image.ModifiedFilename = tempfile.Name()
 
 			} else {
 				returnJSONError(w, "bad change type")

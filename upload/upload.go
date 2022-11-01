@@ -7,22 +7,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image"
 	"io"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
-	"os"
-	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/fogleman/gg"
 	"github.com/tardisx/discord-auto-upload/config"
+	"github.com/tardisx/discord-auto-upload/image"
+
 	daulog "github.com/tardisx/discord-auto-upload/log"
-	"golang.org/x/image/font/inconsolata"
 )
 
 type State string
@@ -51,19 +48,13 @@ type Upload struct {
 	Id         int32     `json:"id"`
 	UploadedAt time.Time `json:"uploaded_at"`
 
-	OriginalFilename string `json:"original_file"` // path on the local disk
-	MarkedUpFilename string `json:"markedup_file"` // a temporary file, if the user did some markup
+	Image *image.Store
 
 	webhookURL string
-
-	watermark bool // should watermark
 
 	usernameOverride string
 
 	Url string `json:"url"` // url on the discord CDN
-
-	Width  int `json:"width"`
-	Height int `json:"height"`
 
 	State State `json:"state"`
 
@@ -82,11 +73,13 @@ func (u *Uploader) AddFile(file string, conf config.Watcher) {
 	atomic.AddInt32(&currentId, 1)
 	thisUpload := Upload{
 		Id:               currentId,
-		OriginalFilename: file,
-		watermark:        !conf.NoWatermark,
+		UploadedAt:       time.Time{},
+		Image:            &image.Store{OriginalFilename: file, Watermark: !conf.NoWatermark, MaxBytes: 8_000_000},
 		webhookURL:       conf.WebHookURL,
 		usernameOverride: conf.Username,
+		Url:              "",
 		State:            StateQueued,
+		Client:           nil,
 	}
 	// if the user wants uploads to be held for editing etc,
 	// set it to Pending instead
@@ -123,16 +116,8 @@ func (u *Uploader) UploadById(id int32) *Upload {
 	return nil
 }
 
-func (u *Upload) RemoveMarkupTempFile() {
-	if len(u.MarkedUpFilename) > 0 {
-		os.Remove(u.MarkedUpFilename)
-	}
-}
-
 func (u *Upload) processUpload() error {
-	daulog.Infof("Uploading: %s", u.OriginalFilename)
-
-	baseFilename := filepath.Base(u.OriginalFilename)
+	daulog.Infof("Uploading: %s", u.Image)
 
 	if u.webhookURL == "" {
 		daulog.Error("WebHookURL is not configured - cannot upload!")
@@ -164,41 +149,14 @@ func (u *Upload) processUpload() error {
 	for retriesRemaining > 0 {
 
 		// open an io.ReadCloser for the file we intend to upload
-		var filedata *os.File
 		var err error
-		if len(u.MarkedUpFilename) > 0 {
-			filedata, err = os.Open(u.MarkedUpFilename)
-			if err != nil {
-				daulog.Errorf("Error opening marked up file: %s", err)
-				retriesRemaining--
-				sleepForRetries(retriesRemaining)
-				continue
-			}
-		} else {
-			filedata, err = os.Open(u.OriginalFilename)
-			if err != nil {
-				daulog.Errorf("Error opening original file: %s", err)
-				retriesRemaining--
-				sleepForRetries(retriesRemaining)
-				continue
-			}
+
+		imageData, err := u.Image.ReadCloser()
+		if err != nil {
+			panic(err)
 		}
 
-		var imageData io.Reader
-		if u.watermark {
-			daulog.Info("Watermarking image")
-			imageData, err = u.applyWatermark(filedata)
-			if err != nil {
-				daulog.Errorf("Error watermarking: %s", err)
-				retriesRemaining--
-				sleepForRetries(retriesRemaining)
-				continue
-			}
-		} else {
-			imageData = filedata
-		}
-
-		request, err := newfileUploadRequest(u.webhookURL, extraParams, "file", baseFilename, imageData)
+		request, err := newfileUploadRequest(u.webhookURL, extraParams, "file", u.Image.UploadFilename(), imageData)
 		if err != nil {
 			daulog.Errorf("error creating upload request: %s", err)
 			return fmt.Errorf("could not create upload request: %s", err)
@@ -274,16 +232,15 @@ func (u *Upload) processUpload() error {
 
 			u.Url = a.URL
 			u.State = StateComplete
-			u.Width = a.Width
-			u.Height = a.Height
+
 			u.UploadedAt = time.Now()
 
 			break
 		}
 	}
 
-	// remove any marked up file
-	u.RemoveMarkupTempFile()
+	// remove any temporary files
+	u.Image.Cleanup()
 
 	if retriesRemaining == 0 {
 		daulog.Error("Failed to upload, even after all retries")
@@ -318,40 +275,6 @@ func newfileUploadRequest(uri string, params map[string]string, paramName string
 	req, err := http.NewRequest("POST", uri, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	return req, err
-}
-
-// applyWatermark applies the watermark to the image
-func (u *Upload) applyWatermark(in *os.File) (io.Reader, error) {
-
-	defer in.Close()
-
-	im, _, err := image.Decode(in)
-	if err != nil {
-		daulog.Errorf("Cannot decode image: %v - skipping watermarking", err)
-		return nil, errors.New("cannot decode image")
-	}
-	bounds := im.Bounds()
-	// var S float64 = float64(bounds.Max.X)
-
-	dc := gg.NewContext(bounds.Max.X, bounds.Max.Y)
-	dc.Clear()
-	dc.SetRGB(0, 0, 0)
-
-	dc.SetFontFace(inconsolata.Regular8x16)
-
-	dc.DrawImage(im, 0, 0)
-
-	dc.DrawRoundedRectangle(0, float64(bounds.Max.Y-18.0), 320, float64(bounds.Max.Y), 0)
-	dc.SetRGB(0, 0, 0)
-	dc.Fill()
-
-	dc.SetRGB(1, 1, 1)
-
-	dc.DrawString("github.com/tardisx/discord-auto-upload", 5.0, float64(bounds.Max.Y)-5.0)
-
-	b := bytes.Buffer{}
-	dc.EncodePNG(&b)
-	return &b, nil
 }
 
 func sleepForRetries(retry int) {
