@@ -123,7 +123,7 @@ func (u *Uploader) UploadById(id int32) *Upload {
 }
 
 func (u *Upload) processUpload() error {
-	daulog.Infof("Uploading: %s", u.Image)
+	daulog.Infof("Uploading: %s", u.Image.OriginalFilename)
 
 	if u.webhookURL == "" {
 		daulog.Error("WebHookURL is not configured - cannot upload!")

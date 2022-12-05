@@ -296,7 +296,7 @@ func (ws *WebService) modifyUpload(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// write to a temporary file
-				tempfile, err := ioutil.TempFile("", "dau_markup")
+				tempfile, err := ioutil.TempFile("", "dau_markup-*")
 				if err != nil {
 					log.Fatal(err)
 				}

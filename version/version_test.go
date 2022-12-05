@@ -6,7 +6,7 @@ import (
 
 func TestVersioningUpdate(t *testing.T) {
 	// pretend there is a new version
-	LatestVersion = "v0.13.0"
+	LatestVersion = "v0.13.9"
 	if !UpdateAvailable() {
 		t.Error("should be a version newer than " + CurrentVersion)
 	}
