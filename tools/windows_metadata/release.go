@@ -63,7 +63,7 @@ func main() {
 		panic("bad version" + version)
 	}
 	parts := strings.Split(version, ".")
-	if len(parts) != 3 {
+	if len(parts) < 3 {
 		log.Fatalf("bad version: %s", version)
 	}
 

@@ -11,5 +11,5 @@ require (
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/stretchr/testify v1.6.1 // indirect
 	golang.org/x/image v0.0.0-20210504121937-7319ad40d33e
-	golang.org/x/mod v0.4.2
+	golang.org/x/mod v0.7.0
 )
