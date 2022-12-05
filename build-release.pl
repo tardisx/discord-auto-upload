@@ -33,8 +33,10 @@ system "mkdir", "dist";
 
 my %build = (
   win   => { env => { GOOS => 'windows', GOARCH => 'amd64' }, filename => 'dau.exe' },
-  linux => { env => { GOOS => 'linux',   GOARCH => 'amd64' }, filename => 'dau' },
-  mac   => { env => { GOOS => 'darwin',  GOARCH => 'amd64' }, filename => 'dau' },
+  linux_amd64 => { env => { GOOS => 'linux',   GOARCH => 'amd64' }, filename => 'dau' },
+  linux_arm64 => { env => { GOOS => 'linux',   GOARCH => 'arm64' }, filename => 'dau' },
+  mac_amd64   => { env => { GOOS => 'darwin',  GOARCH => 'amd64' }, filename => 'dau' },
+  mac_arm64   => { env => { GOOS => 'darwin',  GOARCH => 'arm64' }, filename => 'dau' },
 ); 
 
 foreach my $type (keys %build) {
