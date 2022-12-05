@@ -1,4 +1,5 @@
-//go:build !windows
+//go:build darwin || linux
+// +build darwin linux
 
 package main
 

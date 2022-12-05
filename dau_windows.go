@@ -10,12 +10,10 @@ import (
 	"github.com/tardisx/discord-auto-upload/version"
 )
 
-//go:embed dau.ico
-var appIcon []byte
-
 //go:generate goversioninfo
 
-// -manifest=testdata/resource/goversioninfo.exe.manifest
+//go:embed dau.ico
+var appIcon []byte
 
 func mainloop(c *config.ConfigService) {
 	systray.Run(func() { onReady(c) }, onExit)
