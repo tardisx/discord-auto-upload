@@ -38,7 +38,7 @@
       <thead>
         <tr>
           <th>filename</th>
-          <th>actions</th>
+          <th>state</th>
           <th>&nbsp;</th>
         </tr>
       </thead>
@@ -47,9 +47,11 @@
         <template x-for="ul in uploads">
           <tr>
             <td x-text="ul.original_file"></td>
-            <td>
-              <button @click="start_upload(ul.id)" type="button" class="btn btn-primary">upload</button>
-            </td>
+            <td> 
+              <span x-text="ul.state"></span>
+              <div x-if="ul.state_reason">(<span x-text="ul.state_reason"></span>)</div>
+             </td>
+  
             <td>
               <img :src="'/rest/image/'+ul.id+'/thumb'">
             </td>
@@ -74,7 +76,10 @@
        <template x-for="ul in finished">
          <tr>
            <td x-text="ul.original_file"></td>
-           <td x-text="ul.state"></td>
+           <td> 
+            <span x-text="ul.state"></span>
+            <div x-if="ul.state_reason">(<span x-text="ul.state_reason"></span>)</div>
+           </td>
            <td>
             <img :src="'/rest/image/'+ul.id+'/thumb'">
           </td>

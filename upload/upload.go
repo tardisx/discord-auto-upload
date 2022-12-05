@@ -25,12 +25,13 @@ import (
 type State string
 
 const (
-	StatePending   State = "Pending"   // waiting for decision to upload (could be edited)
-	StateQueued    State = "Queued"    // ready for upload
-	StateUploading State = "Uploading" // uploading
-	StateComplete  State = "Complete"  // finished successfully
-	StateFailed    State = "Failed"    // failed
-	StateSkipped   State = "Skipped"   // user did not want to upload
+	StatePending      State = "Pending"          // waiting for decision to upload (could be edited)
+	StateQueued       State = "Queued"           // ready for upload
+	StateWatermarking State = "Adding Watermark" // thumbnail generation
+	StateUploading    State = "Uploading"        // uploading
+	StateComplete     State = "Complete"         // finished successfully
+	StateFailed       State = "Failed"           // failed
+	StateSkipped      State = "Skipped"          // user did not want to upload
 )
 
 var currentId int32
@@ -56,7 +57,11 @@ type Upload struct {
 
 	Url string `json:"url"` // url on the discord CDN
 
-	State State `json:"state"`
+	Width  int `json:"width"`
+	Height int `json:"height"`
+
+	State       State  `json:"state"`
+	StateReason string `json:"state_reason"`
 
 	Client HTTPClient `json:"-"`
 }
@@ -85,6 +90,7 @@ func (u *Uploader) AddFile(file string, conf config.Watcher) {
 	// set it to Pending instead
 	if conf.HoldUploads {
 		thisUpload.State = StatePending
+		thisUpload.StateReason = ""
 	}
 	u.Uploads = append(u.Uploads, &thisUpload)
 	u.Lock.Unlock()
@@ -180,6 +186,7 @@ func (u *Upload) processUpload() error {
 				// just fail immediately, we know this means the file was too big
 				daulog.Error("413 received - file too large")
 				u.State = StateFailed
+				u.StateReason = "discord API said file too large"
 				return errors.New("received 413 - file too large")
 			}
 
@@ -232,7 +239,9 @@ func (u *Upload) processUpload() error {
 
 			u.Url = a.URL
 			u.State = StateComplete
-
+			u.StateReason = ""
+			u.Width = a.Width
+			u.Height = a.Height
 			u.UploadedAt = time.Now()
 
 			break
@@ -245,6 +254,7 @@ func (u *Upload) processUpload() error {
 	if retriesRemaining == 0 {
 		daulog.Error("Failed to upload, even after all retries")
 		u.State = StateFailed
+		u.StateReason = "could not upload after all retries"
 		return errors.New("could not upload after all retries")
 	}
 
