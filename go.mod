@@ -10,6 +10,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/stretchr/testify v1.6.1 // indirect
-	golang.org/x/image v0.0.0-20210504121937-7319ad40d33e
+	golang.org/x/image v0.5.0
 	golang.org/x/mod v0.7.0
 )
