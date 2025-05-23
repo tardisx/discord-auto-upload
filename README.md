@@ -1,3 +1,7 @@
+# ARCHIVED - 2025-05-23
+
+Due to GitHub's AI enshittification, this project has been moved to https://code.ppl.town/justin/discord-auto-upload
+
 # Automatically upload screenshots into a discord channel
 
 [![Go](https://github.com/tardisx/discord-auto-upload/actions/workflows/go.yml/badge.svg)](https://github.com/tardisx/discord-auto-upload/actions/workflows/go.yml)
